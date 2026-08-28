@@ -1,0 +1,63 @@
+@use "../../../styles/variables.scss" as *;
+
+.badgeChip {
+  font-weight: 600 !important;
+  border-radius: 20px !important;
+  padding: 4px 8px !important;
+  backdrop-filter: blur(8px);
+  transition: $transition-smooth !important;
+
+  &.statusActive {
+    background: rgba(16, 185, 129, 0.12) !important;
+    color: #047857 !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+
+    :global([data-theme='dark']) & {
+      background: rgba(16, 185, 129, 0.18) !important;
+      color: #10b981 !important;
+      border-color: rgba(16, 185, 129, 0.4) !important;
+    }
+  }
+
+  &.statusBusy {
+    background: rgba(239, 68, 68, 0.12) !important;
+    color: #b91c1c !important;
+    border: 1px solid rgba(239, 68, 68, 0.35) !important;
+
+    :global([data-theme='dark']) & {
+      background: rgba(239, 68, 68, 0.18) !important;
+      color: #ef4444 !important;
+      border-color: rgba(239, 68, 68, 0.4) !important;
+    }
+  }
+
+  &.statusWarning {
+    background: rgba(245, 158, 11, 0.12) !important;
+    color: #b45309 !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+
+    :global([data-theme='dark']) & {
+      background: rgba(245, 158, 11, 0.18) !important;
+      color: #f59e0b !important;
+      border-color: rgba(245, 158, 11, 0.4) !important;
+    }
+  }
+
+  &.statusGradient {
+    background: $gradient-primary !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: $shadow-glow-primary !important;
+  }
+}
+
+.pulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  display: inline-block;
+  background-color: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  animation: pulseGlow 2s infinite ease-in-out;
+}

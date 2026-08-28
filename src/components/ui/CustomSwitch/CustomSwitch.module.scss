@@ -1,0 +1,25 @@
+@use "../../../styles/variables.scss" as *;
+
+.neonSwitch {
+  & .MuiSwitch-switchBase {
+    &.Mui-checked {
+      color: #ffffff !important;
+
+      & + .MuiSwitch-track {
+        background: $gradient-primary !important;
+        opacity: 1 !important;
+        box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+      }
+    }
+  }
+
+  & .MuiSwitch-track {
+    background-color: rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+
+    :global([data-theme='dark']) & {
+      background-color: rgba(255, 255, 255, 0.2) !important;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+}

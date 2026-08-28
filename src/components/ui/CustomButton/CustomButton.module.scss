@@ -1,0 +1,99 @@
+@use "../../../styles/variables.scss" as *;
+
+.buttonGlow {
+  position: relative;
+  background: $gradient-primary !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3) !important;
+  transition: $transition-smooth !important;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent
+    );
+    transition: 0.5s;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(236, 72, 153, 0.5) !important;
+
+    &::before {
+      left: 100%;
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.buttonGlass {
+  background: rgba(0, 0, 0, 0.04) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #0f172a !important;
+  border-radius: 12px !important;
+  transition: $transition-smooth !important;
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.07) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.08) !important;
+    border-color: rgba(99, 102, 241, 0.5) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+
+    :global([data-theme='dark']) & {
+      background: rgba(255, 255, 255, 0.15) !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+    }
+  }
+}
+
+.buttonNeon {
+  background: transparent !important;
+  color: #0284c7 !important;
+  border: 1px solid #0284c7 !important;
+  border-radius: 12px !important;
+  transition: $transition-smooth !important;
+
+  :global([data-theme='dark']) & {
+    color: #00f2fe !important;
+    border-color: #00f2fe !important;
+    text-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
+    box-shadow: 0 0 10px rgba(0, 242, 254, 0.2) !important;
+  }
+
+  &:hover {
+    background: rgba(2, 132, 199, 0.08) !important;
+    transform: translateY(-2px);
+
+    :global([data-theme='dark']) & {
+      background: rgba(0, 242, 254, 0.1) !important;
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.6) !important;
+    }
+  }
+}
+
+.pulseEffect {
+  animation: pulseGlow 3s infinite ease-in-out;
+}

@@ -1,0 +1,540 @@
+@use "../../styles/variables.scss" as *;
+
+.shellContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100vw;
+  background-color: #f8fafc;
+  color: #0f172a;
+  overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
+
+  :global([data-theme='dark']) & {
+    background-color: #090d16;
+    color: #f9fafb;
+  }
+}
+
+/* ─── 1. Floating Top Navigation Bar (Skiper UI Navbar Pill) ─── */
+.topNavWrapper {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  width: calc(100% - 32px);
+  max-width: 900px;
+}
+
+.topNavbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transition: background 0.25s ease, border-color 0.25s ease;
+
+  :global([data-theme='dark']) & {
+    background: rgba(17, 24, 39, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+  }
+}
+
+.logoBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  cursor: pointer;
+
+  :global([data-theme='dark']) & {
+    color: #ffffff;
+  }
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.navLink {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.18s ease;
+
+  :global([data-theme='dark']) & {
+    color: #9ca3af;
+  }
+
+  &:hover, &.activeLink {
+    color: #4f46e5;
+
+    :global([data-theme='dark']) & {
+      color: #818cf8;
+    }
+  }
+}
+
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cmdKBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease;
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #9ca3af;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.08);
+
+    :global([data-theme='dark']) & {
+      background: rgba(255, 255, 255, 0.12);
+    }
+  }
+}
+
+.kbdTag {
+  background: rgba(0, 0, 0, 0.08);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.themeToggleBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  color: #0f172a;
+  transition: background 0.18s ease;
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #facc15;
+  }
+}
+
+/* ─── 2. Main Page Area ─── */
+.mainContainer {
+  padding-top: 130px;
+  padding-bottom: 60px;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+  box-sizing: border-box;
+}
+
+/* ─── Hero Section ─── */
+.heroSection {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.heroTitle {
+  font-size: 2.75rem !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.1 !important;
+  background: linear-gradient(135deg, #0f172a 0%, #475569 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 12px !important;
+
+  :global([data-theme='dark']) & {
+    background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+.heroSubtitle {
+  font-size: 1.05rem !important;
+  color: #64748b !important;
+  max-width: 600px;
+  margin: 0 auto 24px auto !important;
+
+  :global([data-theme='dark']) & {
+    color: #9ca3af !important;
+  }
+}
+
+/* ── Search & Category Filter Bar ── */
+.filterControlsBar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.categoryRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.catPill {
+  padding: 8px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #9ca3af;
+  }
+
+  &:hover {
+    border-color: #6366f1;
+    color: #4f46e5;
+
+    :global([data-theme='dark']) & {
+      border-color: #818cf8;
+      color: #818cf8;
+    }
+  }
+
+  &.activeCatPill {
+    background: #6366f1;
+    color: #ffffff !important;
+    border-color: #6366f1;
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.35);
+  }
+}
+
+/* ─── 3. Skiper UI Component Cards Grid ─── */
+.componentsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 28px;
+}
+
+.componentCard {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.04);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+
+  :global([data-theme='dark']) & {
+    background: rgba(17, 24, 39, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 45px rgba(99, 102, 241, 0.22);
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+}
+
+.cardPreviewCanvas {
+  height: 250px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.06) 0%, transparent 70%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  :global([data-theme='dark']) & {
+    background: radial-gradient(circle at center, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+}
+
+.cardContent {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.cardTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cardTitle {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+
+  :global([data-theme='dark']) & {
+    color: #ffffff !important;
+  }
+}
+
+.tagBadge {
+  background: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  :global([data-theme='dark']) & {
+    background: rgba(99, 102, 241, 0.18);
+    color: #818cf8;
+    border-color: rgba(99, 102, 241, 0.3);
+  }
+}
+
+.tierBadge {
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+
+  :global([data-theme='dark']) & {
+    background: rgba(16, 185, 129, 0.18);
+    color: #10b981;
+  }
+}
+
+.cardDesc {
+  font-size: 0.85rem !important;
+  color: #64748b !important;
+  line-height: 1.4 !important;
+  flex: 1;
+
+  :global([data-theme='dark']) & {
+    color: #9ca3af !important;
+  }
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+
+  :global([data-theme='dark']) & {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
+
+/* ─── 4. Skiper UI Single Component Showcase Viewer Page ─── */
+.componentPageWrap {
+  width: 100%;
+}
+
+.backBtnRow {
+  margin-bottom: 20px;
+}
+
+.backBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.18s ease;
+
+  :global([data-theme='dark']) & {
+    color: #9ca3af;
+  }
+
+  &:hover {
+    color: #4f46e5;
+
+    :global([data-theme='dark']) & {
+      color: #818cf8;
+    }
+  }
+}
+
+.compHeaderSection {
+  margin-bottom: 24px;
+}
+
+.cliInstallBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  padding: 8px 16px;
+  width: fit-content;
+  margin-top: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+
+  :global([data-theme='dark']) & {
+    background: rgba(17, 24, 39, 0.8);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.cliText {
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4f46e5;
+
+  :global([data-theme='dark']) & {
+    color: #818cf8;
+  }
+}
+
+/* Single Component Showcase Container Box (Skiper UI Container) */
+.showcaseContainer {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.06);
+  transition: background 0.25s ease, border-color 0.25s ease;
+
+  :global([data-theme='dark']) & {
+    background: #0f1422;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  }
+}
+
+.showcaseTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+}
+
+.tabPillSegment {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 3px;
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.showcaseTabBtn {
+  padding: 6px 16px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+
+  :global([data-theme='dark']) & {
+    color: #9ca3af;
+  }
+
+  &.activeShowcaseTab {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    :global([data-theme='dark']) & {
+      background: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      box-shadow: none;
+    }
+  }
+}
+
+.showcaseBody {
+  display: flex;
+  min-height: 480px;
+  position: relative;
+}
+
+.showcaseCanvasArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.showcaseControlsDrawer {
+  width: 320px;
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+
+  :global([data-theme='dark']) & {
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(17, 24, 39, 0.5);
+  }
+}

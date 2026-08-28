@@ -1,0 +1,79 @@
+@use "../../styles/variables.scss" as *;
+
+.canvasWrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: auto;
+  position: relative;
+  padding: 40px;
+  transition: $transition-smooth;
+
+  &.bgDark {
+    background-color: #0b0f19;
+  }
+
+  &.bgLight {
+    background-color: #f8fafc;
+  }
+
+  &.bgMesh {
+    background-color: #f8fafc;
+    background-image: 
+      radial-gradient(at 10% 20%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+      radial-gradient(at 90% 10%, rgba(236, 72, 153, 0.08) 0px, transparent 50%),
+      radial-gradient(at 50% 80%, rgba(16, 185, 129, 0.06) 0px, transparent 50%);
+
+    :global([data-theme='dark']) & {
+      background-color: #090d16;
+      background-image: 
+        radial-gradient(at 10% 20%, rgba(99, 102, 241, 0.2) 0px, transparent 50%),
+        radial-gradient(at 90% 10%, rgba(236, 72, 153, 0.2) 0px, transparent 50%),
+        radial-gradient(at 50% 80%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
+    }
+  }
+
+  &.bgGrid {
+    background-color: #f8fafc;
+    background-size: 24px 24px;
+    background-image: 
+      linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+
+    :global([data-theme='dark']) & {
+      background-color: #0b0f19;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    }
+  }
+}
+
+.previewFrame {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 240px;
+  padding: 48px;
+  border-radius: 16px;
+  transition: $transition-smooth;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+
+  :global([data-theme='dark']) & {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  &.deviceDesktop {
+    width: 100%;
+    max-width: 800px;
+  }
+
+  &.deviceTablet {
+    width: 600px;
+  }
+
+  &.deviceMobile {
+    width: 360px;
+  }
+}

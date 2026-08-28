@@ -1,0 +1,96 @@
+@use "../../../styles/variables.scss" as *;
+
+.inputWrapper {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 12px 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+
+  :global([data-theme='dark']) & {
+    background: rgba(17, 24, 39, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  }
+
+  &:focus-within {
+    border-color: #6366f1;
+    box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
+  }
+}
+
+.dockWrapper {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  position: relative;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+.containerGrid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  align-items: center;
+  width: 100%;
+  caret-color: transparent;
+}
+
+.inputField {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  color: #0f172a;
+  caret-color: transparent !important;
+
+  :global([data-theme='dark']) & {
+    color: #ffffff;
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+
+    :global([data-theme='dark']) & {
+      color: rgba(255, 255, 255, 0.35);
+    }
+  }
+}
+
+.measureSpan {
+  pointer-events: none;
+  visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: pre;
+}
+
+.smoothCaret {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+  pointer-events: none;
+  height: 1.05em;
+  width: 2px;
+  background-color: #6366f1;
+  border-radius: 2px;
+  align-self: center;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+
+  :global([data-theme='dark']) & {
+    background-color: #818cf8;
+    box-shadow: 0 0 10px rgba(129, 140, 248, 0.8);
+  }
+}

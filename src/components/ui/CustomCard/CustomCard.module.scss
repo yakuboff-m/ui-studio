@@ -1,0 +1,74 @@
+@use "../../../styles/variables.scss" as *;
+
+.cardContainer {
+  position: relative;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 20px !important;
+  padding: 24px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06) !important;
+  transition: $transition-smooth !important;
+
+  :global([data-theme='dark']) & {
+    background: rgba(17, 24, 39, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  &.glassVariant {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+
+    :global([data-theme='dark']) & {
+      background: rgba(255, 255, 255, 0.05) !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+  }
+
+  &.hoverEffect:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(99, 102, 241, 0.25) !important;
+    border-color: rgba(99, 102, 241, 0.4) !important;
+  }
+
+  &.glowBorder::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: $gradient-primary;
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  transition: color 0.25s ease;
+
+  :global([data-theme='dark']) & {
+    color: #f9fafb;
+  }
+}
+
+.cardSub {
+  font-size: 0.875rem;
+  color: #64748b;
+  transition: color 0.25s ease;
+
+  :global([data-theme='dark']) & {
+    color: #9ca3af;
+  }
+}
