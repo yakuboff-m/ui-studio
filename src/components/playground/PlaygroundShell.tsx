@@ -31,6 +31,7 @@ import {
   CustomBadge,
   CustomSwitch,
   SmoothInput,
+  GooeyInput,
   ExpandableTabs,
   MarketplaceDock,
 } from '@/components/ui';
@@ -52,6 +53,8 @@ import {
   FULL_CUSTOM_BADGE_SCSS,
   FULL_CUSTOM_SWITCH_TSX,
   FULL_CUSTOM_SWITCH_SCSS,
+  FULL_GOOEY_INPUT_TSX,
+  FULL_GOOEY_INPUT_SCSS,
 } from './componentSources';
 
 import styles from './PlaygroundShell.module.scss';
@@ -200,6 +203,34 @@ const COMPONENT_REGISTRY: RegisteredComponent[] = [
       `<SmoothInput\n  type="${props.type}"\n  placeholder="${props.placeholder}"\n/>`,
     sourceCode: FULL_SMOOTH_INPUT_TSX,
     scssCode: FULL_SMOOTH_INPUT_SCSS,
+  },
+  {
+    id: 'gooey-input',
+    name: 'Gooey Search Input',
+    category: 'Inputs',
+    description: 'Aceternity-style search input expanding with organic SVG gooey filter physics, detached floating icon bubble, and smooth actions.',
+    controls: [
+      { name: 'placeholder', type: 'text', defaultValue: 'Type to search…' },
+      { name: 'collapsedWidth', type: 'number', defaultValue: 150 },
+      { name: 'expandedWidth', type: 'number', defaultValue: 280 },
+      { name: 'disabled', type: 'boolean', defaultValue: false },
+      { name: 'showSubmitButton', type: 'boolean', defaultValue: true },
+    ],
+    render: (props) => (
+      <Box sx={{ py: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 120 }}>
+        <GooeyInput
+          placeholder={String(props.placeholder)}
+          collapsedWidth={Number(props.collapsedWidth) || 150}
+          expandedWidth={Number(props.expandedWidth) || 280}
+          disabled={Boolean(props.disabled)}
+          showSubmitButton={Boolean(props.showSubmitButton)}
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `<GooeyInput\n  placeholder="${props.placeholder}"\n  collapsedWidth={${props.collapsedWidth}}\n  expandedWidth={${props.expandedWidth}}${props.disabled ? '\n  disabled' : ''}${!props.showSubmitButton ? '\n  showSubmitButton={false}' : ''}\n/>`,
+    sourceCode: FULL_GOOEY_INPUT_TSX,
+    scssCode: FULL_GOOEY_INPUT_SCSS,
   },
   {
     id: 'custom-button',

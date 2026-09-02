@@ -1,7 +1,8 @@
 export const FULL_MARKETPLACE_DOCK_TSX = `'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useId, useCallback } from 'react';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
+import { Box } from '@mui/material';
 import {
   Home,
   FileText,
@@ -19,14 +20,34 @@ import {
 import { SmoothInput } from '../SmoothInput';
 import styles from './MarketplaceDock.module.scss';
 
-const SPRING       = { type: 'spring', bounce: 0, duration: 0.4 } as const;
-const LABEL_SPRING = { type: 'spring', bounce: 0, duration: 0.4 } as const;
+const SPRING = { type: 'spring', bounce: 0.2, duration: 0.4 } as const;
+const LABEL_SPRING = { type: 'spring', bounce: 0, duration: 0.35 } as const;
 
 const PANEL_VARIANTS = {
   initial: (dir: number) => ({ x: \`\${100 * dir}%\`, opacity: 0 }),
   active:  { x: '0%', opacity: 1 },
   exit:    (dir: number) => ({ x: \`\${-100 * dir}%\`, opacity: 0 }),
 };
+
+/* ─────────── Gooey Filter ─────────── */
+function GooeyFilter({ filterId, blur = 4 }: { filterId: string; blur?: number }) {
+  return (
+    <svg className={styles.gooeyFilterSvg} aria-hidden="true">
+      <defs>
+        <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation={blur} result="blur" />
+          <feColorMatrix
+            in="blur"
+            type="matrix"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10"
+            result="goo"
+          />
+          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+        </filter>
+      </defs>
+    </svg>
+  );
+}
 
 type NavId     = 'home' | 'posts' | 'mypage';
 type PopoverId = 'filter' | 'more';
@@ -70,6 +91,11 @@ const DOCK_BUTTONS: DockBtnDef[] = [
 ];
 
 export const MarketplaceDock: React.FC = () => {
+  const rawId = useId();
+  const safeId = rawId.replace(/:/g, '');
+  const filterId = \`marketplace-gooey-filter-\${safeId}\`;
+  const searchIconLayoutId = \`dock-search-icon-\${safeId}\`;
+
   const [activeNav, setActiveNav] = useState<NavId | null>('home');
   const [activePopover, setActivePopover] = useState<PopoverId | null>(null);
   const [isSearch, setIsSearch]            = useState(false);
@@ -112,10 +138,10 @@ export const MarketplaceDock: React.FC = () => {
     }
   };
 
-  const exitSearch = () => {
+  const exitSearch = useCallback(() => {
     setIsSearch(false);
     setSearchQuery('');
-  };
+  }, []);
 
   useEffect(() => {
     if (!panelMeasureRef.current) return;
@@ -145,7 +171,7 @@ export const MarketplaceDock: React.FC = () => {
     };
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
-  }, [isSearch]);
+  }, [isSearch, exitSearch]);
 
   const prevPopoverRef = useRef<PopoverId | null>(activePopover);
   useEffect(() => {
@@ -177,218 +203,279 @@ export const MarketplaceDock: React.FC = () => {
   };
 
   return (
-    <div className={styles.wrapper}>
-      <div ref={containerRef} className="flex items-end justify-center">
-        <MotionConfig transition={SPRING}>
-          <motion.div
-            initial={false}
-            animate={{ width: currentWidth, height: currentHeight }}
-            className={styles.container}
-          >
-            <div ref={panelMeasureRef}>
-              <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-                {hasPopover && (
-                  <motion.div
-                    key={activePopover}
-                    custom={direction}
-                    variants={PANEL_VARIANTS}
-                    initial="initial"
-                    animate="active"
-                    exit="exit"
-                    className={styles.panelWrap}
-                  >
-                    {activePopover === 'filter' && (
-                      <div className={styles.popoverContent}>
-                        <div className={styles.filterTopRow}>
-                          <div className={styles.filterSection}>
-                            <span className={styles.sectionLabel}>Sort By</span>
-                            <div className={styles.blockList}>
-                              {SORT_OPTIONS.map(opt => (
-                                <button
-                                  key={opt.id}
-                                  type="button"
-                                  onClick={() => setSortBy(opt.id)}
-                                  className={\`\${styles.blockOption} \${
-                                    sortBy === opt.id ? styles.blockOptionActive : ''
-                                  }\`}
-                                >
-                                  <span className={styles.blockDot} />
-                                  <span>{opt.label}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
+    <Box className={styles.wrapper}>
+      <GooeyFilter filterId={filterId} blur={8} />
 
-                          <div className={styles.filterDivider} />
-
-                          <div className={styles.filterSection}>
-                            <span className={styles.sectionLabel}>Expiry</span>
-                            <div className={styles.blockList}>
-                              {EXPIRY_OPTIONS.map(opt => (
-                                <button
-                                  key={opt.id}
-                                  type="button"
-                                  onClick={() => setExpiryStatus(opt.id)}
-                                  className={\`\${styles.blockOption} \${
-                                    expiryStatus === opt.id ? styles.blockOptionActive : ''
-                                  }\`}
-                                >
-                                  <span className={\`\${styles.blockDot} \${opt.dotClass}\`} />
-                                  <span>{opt.label}</span>
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className={styles.filterSection}>
-                          <span className={styles.sectionLabel}>Price Range</span>
-                          <div className={styles.priceRow}>
-                            <div className={styles.priceBox}>
-                              <span className={styles.priceSign}>$</span>
-                              <input
-                                type="number"
-                                placeholder="Min"
-                                value={minPrice}
-                                onChange={e => setMinPrice(e.target.value)}
-                                className={styles.priceInput}
-                              />
-                            </div>
-                            <span className={styles.priceSep}>–</span>
-                            <div className={styles.priceBox}>
-                              <span className={styles.priceSign}>$</span>
-                              <input
-                                type="number"
-                                placeholder="Max"
-                                value={maxPrice}
-                                onChange={e => setMaxPrice(e.target.value)}
-                                className={styles.priceInput}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {activePopover === 'more' && (
-                      <div className={styles.popoverContent}>
-                        <button type="button" className={styles.moreLink}>
-                          <div className={styles.moreLinkLeft}>
-                            <Info size={16} className={styles.moreLinkIcon} />
-                            <span>Service Guide</span>
-                          </div>
-                          <ChevronRight size={14} className={styles.moreLinkArrow} />
-                        </button>
-                        <button type="button" className={styles.moreLink}>
-                          <div className={styles.moreLinkLeft}>
-                            <Building2 size={16} className={styles.moreLinkIcon} />
-                            <span>Seller Center</span>
-                          </div>
-                          <ChevronRight size={14} className={styles.moreLinkArrow} />
-                        </button>
-                        <button type="button" className={styles.moreLink}>
-                          <div className={styles.moreLinkLeft}>
-                            <Tag size={16} className={styles.moreLinkIcon} />
-                            <span>Coupons & Perks</span>
-                          </div>
-                          <ChevronRight size={14} className={styles.moreLinkArrow} />
-                        </button>
-                        <button type="button" className={styles.moreLink}>
-                          <div className={styles.moreLinkLeft}>
-                            <LifeBuoy size={16} className={styles.moreLinkIcon} />
-                            <span>Customer Support</span>
-                          </div>
-                          <ChevronRight size={14} className={styles.moreLinkArrow} />
-                        </button>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div className={styles.dockBar}>
-              <AnimatePresence mode="wait" initial={false}>
-                {isSearch ? (
-                  <motion.div
-                    key="search-mode"
-                    className={styles.searchRow}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.12 }}
-                  >
-                    <Search size={15} className={styles.searchIcon} />
+      <div ref={containerRef} className={styles.innerWrapper}>
+        <AnimatePresence>
+          {isSearch ? (
+            /* Aceternity Gooey Search Input */
+            <motion.div
+              key="gooey-search"
+              className={styles.gooeyFilterWrap}
+              style={{ filter: \`url(#\${filterId})\` }}
+            >
+              {/* Expanding search pill: pulls away to the right */}
+              <motion.div
+                className={styles.searchBarMotion}
+                variants={{
+                  collapsed: { width: 48, marginLeft: 0 },
+                  expanded:  { width: 250, marginLeft: 60 },
+                }}
+                initial="collapsed"
+                animate="expanded"
+                exit="collapsed"
+                transition={{ type: 'spring', bounce: 0.28, duration: 0.85 }}
+              >
+                <motion.div
+                  className={styles.searchPillSurface}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ delay: 0.15, duration: 0.3 }}
+                >
+                  <div className={styles.searchInputContainer}>
                     <SmoothInput
                       ref={searchInputRef}
-                      type="text"
+                      type="search"
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                       placeholder="Search products…"
                       className={styles.searchInput}
+                      wrapperClassName={styles.searchSmoothWrapper}
                       isDockMode
-                      onKeyDown={e => e.key === 'Escape' && exitSearch()}
+                      onKeyDown={e => {
+                        if (e.key === 'Escape') exitSearch();
+                      }}
                     />
-                    <button className={styles.searchClose} onClick={exitSearch} type="button">
-                      <X size={15} />
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="normal-dock"
-                    className={styles.tabList}
-                    role="tablist"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.12 }}
-                  >
-                    {DOCK_BUTTONS.map(btn => {
-                      const active = isButtonActive(btn.id);
-                      return (
-                        <motion.button
-                          key={btn.id}
-                          type="button"
-                          role="tab"
-                          aria-selected={active}
-                          initial={false}
-                          animate={{
-                            gap:          active ? '0.45rem' : 0,
-                            paddingLeft:  active ? '0.85rem' : '0.5rem',
-                            paddingRight: active ? '0.85rem' : '0.5rem',
-                          }}
-                          whileHover={{ scale: 1.06 }}
-                          whileTap={{ scale: 0.94 }}
-                          onClick={() => handleDockClick(btn.id)}
-                          className={\`\${styles.tabButton} \${active ? styles.activeTab : ''}\`}
+                  </div>
+
+                  <div className={styles.searchRightAction}>
+                    <motion.button
+                      type="button"
+                      className={styles.searchCloseBtn}
+                      onClick={() => {
+                        if (searchQuery) {
+                          setSearchQuery('');
+                          searchInputRef.current?.focus();
+                        } else {
+                          exitSearch();
+                        }
+                      }}
+                      aria-label="Close search"
+                      title={searchQuery ? 'Clear text' : 'Close search (Esc)'}
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.92 }}
+                    >
+                      <X size={15} strokeWidth={2.2} />
+                    </motion.button>
+                  </div>
+                </motion.div>
+              </motion.div>
+
+              {/* Detached icon bubble anchored at left: 0 */}
+              <motion.div
+                className={styles.bubbleMotion}
+                variants={{
+                  collapsed: { scale: 0.2, opacity: 0 },
+                  expanded:  { scale: 1, opacity: 1 },
+                }}
+                initial="collapsed"
+                animate="expanded"
+                exit="collapsed"
+                transition={{ type: 'spring', bounce: 0.28, duration: 0.85 }}
+                onClick={() => searchInputRef.current?.focus()}
+              >
+                <div className={styles.bubbleSurface}>
+                  <Search size={18} strokeWidth={2} className={styles.bubbleIcon} />
+                </div>
+              </motion.div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="normal-dock-wrapper"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <MotionConfig transition={SPRING}>
+                <motion.div
+                  initial={false}
+                  animate={{ width: currentWidth, height: currentHeight }}
+                  className={styles.container}
+                >
+                  <div ref={panelMeasureRef}>
+                    <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+                      {hasPopover && (
+                        <motion.div
+                          key={activePopover}
+                          custom={direction}
+                          variants={PANEL_VARIANTS}
+                          initial="initial"
+                          animate="active"
+                          exit="exit"
+                          className={styles.panelWrap}
                         >
-                          <span className={styles.iconSpan}>
-                            {btn.icon}
-                          </span>
-                          <AnimatePresence initial={false}>
-                            {active && (
-                              <motion.span
-                                initial={{ width: 0, opacity: 0 }}
-                                animate={{ width: 'auto', opacity: 1 }}
-                                exit={{ width: 0, opacity: 0 }}
-                                transition={LABEL_SPRING}
-                                className={styles.labelSpan}
-                              >
-                                {btn.label}
-                              </motion.span>
-                            )}
-                          </AnimatePresence>
-                        </motion.button>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </motion.div>
-        </MotionConfig>
+                          {activePopover === 'filter' && (
+                            <div className={styles.popoverContent}>
+                              <div className={styles.filterTopRow}>
+                                <div className={styles.filterSection}>
+                                  <span className={styles.sectionLabel}>Sort By</span>
+                                  <div className={styles.blockList}>
+                                    {SORT_OPTIONS.map(opt => (
+                                      <button
+                                        key={opt.id}
+                                        type="button"
+                                        onClick={() => setSortBy(opt.id)}
+                                        className={\`\${styles.blockOption} \${
+                                          sortBy === opt.id ? styles.blockOptionActive : ''
+                                        }\`}
+                                      >
+                                        <span className={styles.blockDot} />
+                                        <span>{opt.label}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className={styles.filterDivider} />
+
+                                <div className={styles.filterSection}>
+                                  <span className={styles.sectionLabel}>Expiry</span>
+                                  <div className={styles.blockList}>
+                                    {EXPIRY_OPTIONS.map(opt => (
+                                      <button
+                                        key={opt.id}
+                                        type="button"
+                                        onClick={() => setExpiryStatus(opt.id)}
+                                        className={\`\${styles.blockOption} \${
+                                          expiryStatus === opt.id ? styles.blockOptionActive : ''
+                                        }\`}
+                                      >
+                                        <span className={\`\${styles.blockDot} \${opt.dotClass}\`} />
+                                        <span>{opt.label}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className={styles.filterSection}>
+                                <span className={styles.sectionLabel}>Price Range</span>
+                                <div className={styles.priceRow}>
+                                  <div className={styles.priceBox}>
+                                    <span className={styles.priceSign}>$</span>
+                                    <input
+                                      type="number"
+                                      placeholder="Min"
+                                      value={minPrice}
+                                      onChange={e => setMinPrice(e.target.value)}
+                                      className={styles.priceInput}
+                                    />
+                                  </div>
+                                  <span className={styles.priceSep}>–</span>
+                                  <div className={styles.priceBox}>
+                                    <span className={styles.priceSign}>$</span>
+                                    <input
+                                      type="number"
+                                      placeholder="Max"
+                                      value={maxPrice}
+                                      onChange={e => setMaxPrice(e.target.value)}
+                                      className={styles.priceInput}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {activePopover === 'more' && (
+                            <div className={styles.popoverContent}>
+                              <button type="button" className={styles.moreLink}>
+                                <div className={styles.moreLinkLeft}>
+                                  <Info size={16} className={styles.moreLinkIcon} />
+                                  <span>Service Guide</span>
+                                </div>
+                                <ChevronRight size={14} className={styles.moreLinkArrow} />
+                              </button>
+                              <button type="button" className={styles.moreLink}>
+                                <div className={styles.moreLinkLeft}>
+                                  <Building2 size={16} className={styles.moreLinkIcon} />
+                                  <span>Seller Center</span>
+                                </div>
+                                <ChevronRight size={14} className={styles.moreLinkArrow} />
+                              </button>
+                              <button type="button" className={styles.moreLink}>
+                                <div className={styles.moreLinkLeft}>
+                                  <Tag size={16} className={styles.moreLinkIcon} />
+                                  <span>Coupons & Perks</span>
+                                </div>
+                                <ChevronRight size={14} className={styles.moreLinkArrow} />
+                              </button>
+                              <button type="button" className={styles.moreLink}>
+                                <div className={styles.moreLinkLeft}>
+                                  <LifeBuoy size={16} className={styles.moreLinkIcon} />
+                                  <span>Customer Support</span>
+                                </div>
+                                <ChevronRight size={14} className={styles.moreLinkArrow} />
+                              </button>
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  <div className={styles.dockBar}>
+                    <div className={styles.tabList} role="tablist">
+                      {DOCK_BUTTONS.map(btn => {
+                        const active = isButtonActive(btn.id);
+                        return (
+                          <motion.button
+                            key={btn.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={active}
+                            initial={false}
+                            animate={{
+                              gap:          active ? '0.45rem' : 0,
+                              paddingLeft:  active ? '0.85rem' : '0.5rem',
+                              paddingRight: active ? '0.85rem' : '0.5rem',
+                            }}
+                            whileHover={{ scale: 1.06 }}
+                            whileTap={{ scale: 0.94 }}
+                            onClick={() => handleDockClick(btn.id)}
+                            className={\`\${styles.tabButton} \${active ? styles.activeTab : ''}\`}
+                          >
+                            <span className={styles.iconSpan}>
+                              {btn.icon}
+                            </span>
+                            <AnimatePresence initial={false}>
+                              {active && (
+                                <motion.span
+                                  initial={{ width: 0, opacity: 0 }}
+                                  animate={{ width: 'auto', opacity: 1 }}
+                                  exit={{ width: 0, opacity: 0 }}
+                                  transition={LABEL_SPRING}
+                                  className={styles.labelSpan}
+                                >
+                                  {btn.label}
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              </MotionConfig>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </Box>
   );
 };`;
 
@@ -400,6 +487,92 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   width: 100%;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+.innerWrapper {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.gooeyFilterWrap {
+  position: relative;
+  display: flex;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+}
+
+.searchBarMotion {
+  display: flex;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.searchPillSurface {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  width: 100%;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 0 10px 0 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
+
+  :global([data-theme='dark']) & {
+    background: #1a1f2e;
+    color: #f1f5f9;
+  }
+}
+
+.bubbleMotion {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto 0;
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.bubbleSurface {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #0f172a;
+
+  :global([data-theme='dark']) & {
+    background: #1a1f2e;
+    color: #f1f5f9;
+  }
+}
+
+.bubbleIcon {
+  display: block;
+}
+
+.gooeyFilterSvg {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
 }
 
 .container {
@@ -409,15 +582,13 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   border-radius: 24px;
   background: #ffffff;
   color: #0f172a;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.12);
-  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08), 0 16px 40px -10px rgba(0, 0, 0, 0.12);
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
 
   :global([data-theme='dark']) & {
     background: #1a1f2e;
     color: #f1f5f9;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.7);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 20px 50px -12px rgba(0, 0, 0, 0.7);
   }
 }
 
@@ -623,6 +794,116 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   background: inherit;
 }
 
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0 10px 0 14px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.searchLeftIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #64748b;
+
+  :global([data-theme='dark']) & {
+    color: rgba(255, 255, 255, 0.45);
+  }
+}
+
+.searchIcon {
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.searchInputContainer {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.searchSmoothWrapper {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #0f172a;
+  padding: 0;
+
+  :global([data-theme='dark']) & {
+    color: #ffffff;
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+
+    :global([data-theme='dark']) & {
+      color: rgba(255, 255, 255, 0.35);
+    }
+  }
+
+  &::-webkit-search-cancel-button,
+  &::-webkit-search-decoration,
+  &::-webkit-search-results-button,
+  &::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    display: none;
+  }
+}
+
+.searchRightAction {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.searchCloseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: #64748b;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  :global([data-theme='dark']) & {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.12);
+    color: #0f172a;
+
+    :global([data-theme='dark']) & {
+      background: rgba(255, 255, 255, 0.16);
+      color: #ffffff;
+    }
+  }
+}
+
 .tabList {
   display: flex;
   height: 100%;
@@ -636,11 +917,12 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
 .tabButton {
   position: relative;
   display: flex;
+  padding: 0;
   height: 36px;
   min-width: 36px;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 10px;
   background: transparent;
   border: none;
   color: #64748b;
@@ -653,15 +935,41 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   flex-shrink: 0;
   transition: background 0.18s ease, color 0.18s ease;
 
+  :global([data-theme='dark']) & {
+    color: rgba(255, 255, 255, 0.42);
+  }
+
+  &:first-of-type {
+    border-radius: 18px 10px 10px 18px;
+  }
+
+  &:last-of-type {
+    border-radius: 10px 18px 18px 10px;
+  }
+
+  &:only-of-type {
+    border-radius: 18px;
+  }
+
   &:hover:not(.activeTab) {
     background: rgba(0, 0, 0, 0.05);
     color: #0f172a;
+
+    :global([data-theme='dark']) & {
+      background: rgba(255, 255, 255, 0.07);
+      color: rgba(255, 255, 255, 0.8);
+    }
   }
 
   &.activeTab {
     background: rgba(99, 102, 241, 0.12);
     color: #4f46e5;
     font-weight: 600;
+
+    :global([data-theme='dark']) & {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
   }
 }
 
@@ -1297,5 +1605,538 @@ export const FULL_CUSTOM_SWITCH_SCSS = `@use "../../../styles/variables.scss" as
   & .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
     background: $gradient-primary !important;
     box-shadow: 0 0 12px rgba(99, 102, 241, 0.6);
+  }
+}`;
+
+export const FULL_GOOEY_INPUT_TSX = `'use client';
+
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useId,
+  useCallback,
+  type ChangeEvent,
+  type KeyboardEvent,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { Search, X, ArrowRight } from 'lucide-react';
+import styles from './GooeyInput.module.scss';
+
+/* ─── Gooey SVG Filter ─── */
+function GooeyFilter({ filterId, blur = 6 }: { filterId: string; blur?: number }) {
+  return (
+    <svg className={styles.filterSvg} aria-hidden="true">
+      <defs>
+        <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation={blur} result="blur" />
+          <feColorMatrix
+            in="blur"
+            type="matrix"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9"
+            result="goo"
+          />
+          <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+        </filter>
+      </defs>
+    </svg>
+  );
+}
+
+const SPRING_CONFIG = {
+  type: 'spring' as const,
+  stiffness: 400,
+  damping: 28,
+  mass: 0.8,
+};
+
+export interface GooeyInputProps {
+  placeholder?: string;
+  collapsedWidth?: number;
+  expandedWidth?: number;
+  gooeyBlur?: number;
+  value?: string;
+  defaultValue?: string;
+  onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+  onValueChange?: (value: string) => void;
+  onSubmit?: (value: string) => void;
+  onOpenChange?: (open: boolean) => void;
+  disabled?: boolean;
+  showSubmitButton?: boolean;
+  className?: string;
+}
+
+export type GooeyInputHandle = {
+  focus: () => void;
+  clear: () => void;
+  expand: () => void;
+  collapse: () => void;
+  getValue: () => string;
+};
+
+export const GooeyInput = forwardRef<GooeyInputHandle, GooeyInputProps>(
+  (
+    {
+      placeholder = 'Type to search…',
+      collapsedWidth = 150,
+      expandedWidth = 280,
+      gooeyBlur = 6,
+      value: controlledValue,
+      defaultValue = '',
+      onChange,
+      onValueChange,
+      onSubmit,
+      onOpenChange,
+      disabled = false,
+      showSubmitButton = true,
+      className = '',
+    },
+    ref
+  ) => {
+    const reactId = useId();
+    const safeId = reactId.replace(/[^a-zA-Z0-9]/g, '');
+    const filterId = \`gooey-filter-\${safeId}\`;
+    const iconLayoutId = \`gooey-icon-\${safeId}\`;
+
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
+
+    const isControlled = controlledValue !== undefined;
+    const inputValue = isControlled ? controlledValue : uncontrolledValue;
+
+    const inputRef = useRef<HTMLInputElement>(null);
+    const rootRef = useRef<HTMLDivElement>(null);
+
+    const setExpanded = useCallback(
+      (nextState: boolean) => {
+        if (disabled) return;
+        setIsExpanded(nextState);
+        onOpenChange?.(nextState);
+      },
+      [disabled, onOpenChange]
+    );
+
+    const setInputValue = useCallback(
+      (nextVal: string) => {
+        if (!isControlled) setUncontrolledValue(nextVal);
+        onValueChange?.(nextVal);
+      },
+      [isControlled, onValueChange]
+    );
+
+    const handleExpand = useCallback(() => {
+      if (disabled || isExpanded) return;
+      setExpanded(true);
+    }, [disabled, isExpanded, setExpanded]);
+
+    const handleCollapse = useCallback(() => {
+      setExpanded(false);
+    }, [setExpanded]);
+
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+      setInputValue(e.target.value);
+      onChange?.(e);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Escape') {
+        if (inputValue) {
+          setInputValue('');
+        } else {
+          handleCollapse();
+        }
+      } else if (e.key === 'Enter') {
+        onSubmit?.(inputValue);
+      }
+    };
+
+    const handleSubmit = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onSubmit?.(inputValue);
+    };
+
+    const handleClear = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setInputValue('');
+      inputRef.current?.focus();
+    };
+
+    useEffect(() => {
+      if (isExpanded) {
+        const timer = setTimeout(() => {
+          inputRef.current?.focus();
+        }, 60);
+        return () => clearTimeout(timer);
+      }
+    }, [isExpanded]);
+
+    useEffect(() => {
+      const handleClickOutside = (e: MouseEvent) => {
+        if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+          if (!inputValue) {
+            setExpanded(false);
+          }
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [inputValue, setExpanded]);
+
+    useImperativeHandle(ref, () => ({
+      focus: () => inputRef.current?.focus(),
+      clear: () => setInputValue(''),
+      expand: () => setExpanded(true),
+      collapse: () => setExpanded(false),
+      getValue: () => inputValue,
+    }));
+
+    return (
+      <div ref={rootRef} className={\`\${styles.root} \${className}\`}>
+        <GooeyFilter filterId={filterId} blur={gooeyBlur} />
+
+        <LayoutGroup id={safeId}>
+          <div
+            className={styles.gooeyFilterWrap}
+            style={{ filter: \`url(#\${filterId})\` }}
+          >
+            <AnimatePresence>
+              {isExpanded && (
+                <motion.div
+                  key="detached-bubble"
+                  className={styles.bubbleMotion}
+                  initial={{ scale: 0.2, opacity: 0, x: 20 }}
+                  animate={{ scale: 1, opacity: 1, x: 0 }}
+                  exit={{ scale: 0.2, opacity: 0, x: 20 }}
+                  transition={SPRING_CONFIG}
+                  onClick={() => inputRef.current?.focus()}
+                >
+                  <div className={styles.bubbleSurface}>
+                    <motion.div layoutId={iconLayoutId} className={styles.iconCenter}>
+                      <Search size={18} strokeWidth={2.2} />
+                    </motion.div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.div
+              layout
+              className={styles.pillMotion}
+              initial={false}
+              animate={{
+                width: isExpanded ? expandedWidth : collapsedWidth,
+              }}
+              transition={SPRING_CONFIG}
+              onClick={handleExpand}
+            >
+              <div
+                className={\`\${styles.pillSurface} \${
+                  isExpanded ? styles.pillSurfaceExpanded : styles.pillSurfaceCollapsed
+                }\`}
+              >
+                {!isExpanded && (
+                  <motion.div layoutId={iconLayoutId} className={styles.collapsedIconWrap}>
+                    <Search size={16} strokeWidth={2.2} className={styles.searchIcon} />
+                  </motion.div>
+                )}
+
+                <div className={styles.inputContainer}>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputValue}
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDown}
+                    placeholder={placeholder}
+                    disabled={disabled || !isExpanded}
+                    className={styles.inputElement}
+                    aria-label="Search"
+                  />
+                </div>
+
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      className={styles.rightActionWrap}
+                      initial={{ opacity: 0, scale: 0.6 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.6 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {inputValue ? (
+                        <div className={styles.actionGroup}>
+                          <button
+                            type="button"
+                            className={styles.actionBtn}
+                            onClick={handleClear}
+                            aria-label="Clear input"
+                            title="Clear"
+                          >
+                            <X size={14} strokeWidth={2.4} />
+                          </button>
+                          {showSubmitButton && (
+                            <button
+                              type="button"
+                              className={\`\${styles.actionBtn} \${styles.actionSubmitBtn}\`}
+                              onClick={handleSubmit}
+                              aria-label="Submit search"
+                              title="Submit (Enter)"
+                            >
+                              <ArrowRight size={14} strokeWidth={2.4} />
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className={styles.actionBtn}
+                          onClick={handleCollapse}
+                          aria-label="Close search"
+                          title="Close (Esc)"
+                        >
+                          <X size={14} strokeWidth={2.4} />
+                        </button>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          </div>
+        </LayoutGroup>
+      </div>
+    );
+  }
+);
+
+GooeyInput.displayName = 'GooeyInput';`;
+
+export const FULL_GOOEY_INPUT_SCSS = `@use "../../../styles/variables.scss" as *;
+
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  user-select: none;
+}
+
+.filterSvg {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.gooeyFilterWrap {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.bubbleMotion {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.bubbleSurface {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #0f172a;
+  color: #f8fafc;
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.35);
+  transition: background-color 0.25s ease, color 0.25s ease, transform 0.15s ease;
+
+  :global([data-theme='dark']) & {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 8px 24px -4px rgba(255, 255, 255, 0.2);
+  }
+
+  &:hover {
+    transform: scale(1.04);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.iconCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.pillMotion {
+  display: flex;
+  height: 48px;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+}
+
+.pillSurface {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  width: 100%;
+  border-radius: 9999px;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0 16px;
+  box-sizing: border-box;
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.35);
+  transition: background-color 0.25s ease, color 0.25s ease;
+  overflow: hidden;
+
+  :global([data-theme='dark']) & {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 8px 24px -4px rgba(255, 255, 255, 0.2);
+  }
+}
+
+.pillSurfaceCollapsed {
+  cursor: pointer;
+  justify-content: flex-start;
+  gap: 8px;
+
+  &:hover {
+    opacity: 0.94;
+  }
+}
+
+.pillSurfaceExpanded {
+  cursor: default;
+  padding: 0 12px 0 18px;
+}
+
+.collapsedIconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.searchIcon {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.inputContainer {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.inputElement {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: inherit;
+  letter-spacing: -0.01em;
+
+  &::placeholder {
+    color: rgba(248, 250, 252, 0.55);
+    font-weight: 400;
+
+    :global([data-theme='dark']) & {
+      color: rgba(15, 23, 42, 0.45);
+    }
+  }
+
+  .pillSurfaceCollapsed & {
+    cursor: pointer;
+    pointer-events: none;
+  }
+}
+
+.rightActionWrap {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+
+  :global([data-theme='dark']) & {
+    background: rgba(15, 23, 42, 0.08);
+    color: #0f172a;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.08);
+
+    :global([data-theme='dark']) & {
+      background: rgba(15, 23, 42, 0.14);
+    }
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
+}
+
+.actionSubmitBtn {
+  background: #6366f1;
+  color: #ffffff;
+
+  :global([data-theme='dark']) & {
+    background: #4f46e5;
+    color: #ffffff;
+  }
+
+  &:hover {
+    background: #4f46e5;
+
+    :global([data-theme='dark']) & {
+      background: #4338ca;
+    }
   }
 }`;

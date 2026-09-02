@@ -6,3 +6,4 @@ export * from './CustomSwitch';
 export * from './ExpandableTabs';
 export * from './MarketplaceDock';
 export * from './SmoothInput';
+export * from './GooeyInput';

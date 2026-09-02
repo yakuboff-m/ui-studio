@@ -1,0 +1,235 @@
+@use "../../../styles/variables.scss" as *;
+
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  user-select: none;
+}
+
+/* ── Hidden SVG Filter ── */
+.filterSvg {
+  position: absolute;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+}
+
+/* ── Gooey Filter Container ── */
+.gooeyFilterWrap {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* ── Left Detached Bubble ── */
+.bubbleMotion {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.bubbleSurface {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #0f172a;
+  color: #f8fafc;
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.35);
+  transition: background-color 0.25s ease, color 0.25s ease, transform 0.15s ease;
+
+  :global([data-theme='dark']) & {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 8px 24px -4px rgba(255, 255, 255, 0.2);
+  }
+
+  &:hover {
+    transform: scale(1.04);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
+.iconCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Main Pill Motion Wrapper ── */
+.pillMotion {
+  display: flex;
+  height: 48px;
+  align-items: center;
+  justify-content: flex-start;
+  flex-shrink: 0;
+}
+
+/* ── Main Pill Surface ── */
+.pillSurface {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  width: 100%;
+  border-radius: 9999px;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0 16px;
+  box-sizing: border-box;
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.35);
+  transition: background-color 0.25s ease, color 0.25s ease;
+  overflow: hidden;
+
+  :global([data-theme='dark']) & {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 8px 24px -4px rgba(255, 255, 255, 0.2);
+  }
+}
+
+.pillSurfaceCollapsed {
+  cursor: pointer;
+  justify-content: flex-start;
+  gap: 8px;
+
+  &:hover {
+    opacity: 0.94;
+  }
+}
+
+.pillSurfaceExpanded {
+  cursor: default;
+  padding: 0 12px 0 18px;
+}
+
+/* ── Search Icon (Collapsed Mode) ── */
+.collapsedIconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.searchIcon {
+  color: inherit;
+  opacity: 0.85;
+}
+
+/* ── Text Input Container ── */
+.inputContainer {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.inputElement {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: inherit;
+  letter-spacing: -0.01em;
+
+  &::placeholder {
+    color: rgba(248, 250, 252, 0.55);
+    font-weight: 400;
+
+    :global([data-theme='dark']) & {
+      color: rgba(15, 23, 42, 0.45);
+    }
+  }
+
+  .pillSurfaceCollapsed & {
+    cursor: pointer;
+    pointer-events: none;
+  }
+}
+
+/* ── Right Action Buttons (Clear / Submit) ── */
+.rightActionWrap {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+
+  :global([data-theme='dark']) & {
+    background: rgba(15, 23, 42, 0.08);
+    color: #0f172a;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.08);
+
+    :global([data-theme='dark']) & {
+      background: rgba(15, 23, 42, 0.14);
+    }
+  }
+
+  &:active {
+    transform: scale(0.92);
+  }
+}
+
+.actionSubmitBtn {
+  background: #6366f1;
+  color: #ffffff;
+
+  :global([data-theme='dark']) & {
+    background: #4f46e5;
+    color: #ffffff;
+  }
+
+  &:hover {
+    background: #4f46e5;
+
+    :global([data-theme='dark']) & {
+      background: #4338ca;
+    }
+  }
+}
