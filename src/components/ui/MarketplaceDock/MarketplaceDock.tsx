@@ -18,6 +18,7 @@ import {
   LifeBuoy,
 } from 'lucide-react';
 import { SmoothInput } from '../SmoothInput';
+import { GooeyInput } from '../GooeyInput';
 import styles from './MarketplaceDock.module.scss';
 
 const SPRING = { type: 'spring', bounce: 0.2, duration: 0.4 } as const;
@@ -241,75 +242,23 @@ export const MarketplaceDock: React.FC = () => {
             <motion.div
               key="gooey-search"
               className={styles.gooeyFilterWrap}
-              style={{ filter: `url(#${filterId})` }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
             >
-              {/* Left icon bubble — shares layoutId with the dock search button icon */}
-              <motion.div
-                layoutId={searchIconLayoutId}
-                className={styles.bubbleMotion}
-                onClick={() => searchInputRef.current?.focus()}
-              >
-                <div className={styles.bubbleSurface}>
-                  <Search size={18} strokeWidth={2} />
-                </div>
-              </motion.div>
-
-              {/* Expanding search bar pill */}
-              <motion.div
-                className={styles.searchBarMotion}
-                initial={{ width: 48, opacity: 0 }}
-                animate={{ width: 250, opacity: 1 }}
-                exit={{ width: 48, opacity: 0 }}
-                transition={{ type: 'spring', bounce: 0.25, duration: 0.7 }}
-              >
-                <div className={styles.searchPillSurface}>
-                  <div className={styles.searchInputContainer}>
-                    <SmoothInput
-                      ref={searchInputRef}
-                      type="search"
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      placeholder="Search products…"
-                      className={styles.searchInput}
-                      wrapperClassName={styles.searchSmoothWrapper}
-                      isDockMode
-                      onKeyDown={e => {
-                        if (e.key === 'Escape') exitSearch();
-                      }}
-                    />
-                  </div>
-
-                  <motion.div
-                    className={styles.searchRightAction}
-                    initial={{ opacity: 0, scale: 0.6 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.25, duration: 0.2 }}
-                  >
-                    <motion.button
-                      type="button"
-                      className={styles.searchCloseBtn}
-                      onClick={() => {
-                        if (searchQuery) {
-                          setSearchQuery('');
-                          searchInputRef.current?.focus();
-                        } else {
-                          exitSearch();
-                        }
-                      }}
-                      aria-label="Close search"
-                      title={searchQuery ? 'Clear text' : 'Close search (Esc)'}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <X size={15} strokeWidth={2.2} />
-                    </motion.button>
-                  </motion.div>
-                </div>
-              </motion.div>
+              <GooeyInput
+                placeholder="Search products…"
+                defaultExpanded={true}
+                value={searchQuery}
+                onValueChange={setSearchQuery}
+                onOpenChange={(open) => {
+                  if (!open) exitSearch();
+                }}
+                collapsedWidth={115}
+                expandedWidth={220}
+                expandedOffset={50}
+              />
             </motion.div>
           ) : (
             /* ── Normal Dock Navigation ── */

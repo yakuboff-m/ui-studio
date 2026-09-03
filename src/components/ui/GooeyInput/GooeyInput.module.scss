@@ -2,234 +2,178 @@
 
 .root {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-family: inherit;
   user-select: none;
 }
 
-/* ── Hidden SVG Filter ── */
 .filterSvg {
   position: absolute;
-  width: 0;
   height: 0;
+  width: 0;
+  overflow: hidden;
   pointer-events: none;
-  visibility: hidden;
-  opacity: 0;
 }
 
-/* ── Gooey Filter Container ── */
-.gooeyFilterWrap {
+.filterWrap {
   position: relative;
   display: flex;
-  flex-direction: row;
-  height: 48px;
+  height: 40px;
   align-items: center;
   justify-content: center;
-  gap: 10px;
 }
 
-/* ── Left Detached Bubble ── */
-.bubbleMotion {
+.buttonRow {
   display: flex;
-  width: 48px;
-  height: 48px;
+  height: 40px;
   align-items: center;
   justify-content: center;
+}
+
+/* ── Surface styling (bg-foreground text-background) ── */
+.surface {
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+  :global([data-theme='dark']) & {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+.trigger {
+  display: flex;
+  height: 40px;
+  width: 100%;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 9999px;
+  padding: 0 14px 0 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  outline: none;
+  border: none;
+  box-sizing: border-box;
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px #6366f1, 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  &:disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+}
+
+.input {
+  height: 100%;
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  font-size: 0.875rem;
+  outline: none;
+  border: none;
+  font-family: inherit;
+  color: inherit;
+
+  &::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    transition: color 0.2s ease;
+
+    :global([data-theme='dark']) & {
+      color: rgba(15, 23, 42, 0.5);
+    }
+  }
+}
+
+.inputCollapsed {
+  pointer-events: none;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.8);
+
+    :global([data-theme='dark']) & {
+      color: rgba(15, 23, 42, 0.75);
+    }
+  }
+}
+
+.inputExpanded {
+  pointer-events: auto;
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
   flex-shrink: 0;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+
+  :global([data-theme='dark']) & {
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+
+    :global([data-theme='dark']) & {
+      background: rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+}
+
+.bubble {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto 0;
+  display: flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
 .bubbleSurface {
   display: flex;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: #0f172a;
-  color: #f8fafc;
-  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.35);
-  transition: background-color 0.25s ease, color 0.25s ease, transform 0.15s ease;
-
-  :global([data-theme='dark']) & {
-    background: #ffffff;
-    color: #0f172a;
-    box-shadow: 0 8px 24px -4px rgba(255, 255, 255, 0.2);
-  }
-
-  &:hover {
-    transform: scale(1.04);
-  }
-
-  &:active {
-    transform: scale(0.96);
-  }
-}
-
-.iconCenter {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-/* ── Main Pill Motion Wrapper ── */
-.pillMotion {
-  display: flex;
-  height: 48px;
-  align-items: center;
-  justify-content: flex-start;
-  flex-shrink: 0;
-}
-
-/* ── Main Pill Surface ── */
-.pillSurface {
-  display: flex;
-  align-items: center;
-  height: 48px;
-  width: 100%;
-  border-radius: 9999px;
-  background: #0f172a;
-  color: #f8fafc;
-  padding: 0 16px;
-  box-sizing: border-box;
-  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.35);
-  transition: background-color 0.25s ease, color 0.25s ease;
-  overflow: hidden;
-
-  :global([data-theme='dark']) & {
-    background: #ffffff;
-    color: #0f172a;
-    box-shadow: 0 8px 24px -4px rgba(255, 255, 255, 0.2);
-  }
-}
-
-.pillSurfaceCollapsed {
-  cursor: pointer;
-  justify-content: flex-start;
-  gap: 8px;
-
-  &:hover {
-    opacity: 0.94;
-  }
-}
-
-.pillSurfaceExpanded {
-  cursor: default;
-  padding: 0 12px 0 18px;
-}
-
-/* ── Search Icon (Collapsed Mode) ── */
-.collapsedIconWrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  border: none;
 }
 
 .searchIcon {
-  color: inherit;
-  opacity: 0.85;
-}
-
-/* ── Text Input Container ── */
-.inputContainer {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
-
-.inputElement {
-  width: 100%;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-family: inherit;
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: inherit;
-  letter-spacing: -0.01em;
-
-  &::placeholder {
-    color: rgba(248, 250, 252, 0.55);
-    font-weight: 400;
-
-    :global([data-theme='dark']) & {
-      color: rgba(15, 23, 42, 0.45);
-    }
-  }
-
-  .pillSurfaceCollapsed & {
-    cursor: pointer;
-    pointer-events: none;
-  }
-}
-
-/* ── Right Action Buttons (Clear / Submit) ── */
-.rightActionWrap {
-  display: flex;
-  align-items: center;
-  margin-left: 8px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
-}
-
-.actionGroup {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.actionBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 9999px;
-  border: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: #f8fafc;
-  cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.15s ease;
-
-  :global([data-theme='dark']) & {
-    background: rgba(15, 23, 42, 0.08);
-    color: #0f172a;
-  }
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: scale(1.08);
-
-    :global([data-theme='dark']) & {
-      background: rgba(15, 23, 42, 0.14);
-    }
-  }
-
-  &:active {
-    transform: scale(0.92);
-  }
-}
-
-.actionSubmitBtn {
-  background: #6366f1;
-  color: #ffffff;
-
-  :global([data-theme='dark']) & {
-    background: #4f46e5;
-    color: #ffffff;
-  }
-
-  &:hover {
-    background: #4f46e5;
-
-    :global([data-theme='dark']) & {
-      background: #4338ca;
-    }
-  }
 }

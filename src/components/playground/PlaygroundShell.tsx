@@ -208,27 +208,29 @@ const COMPONENT_REGISTRY: RegisteredComponent[] = [
     id: 'gooey-input',
     name: 'Gooey Search Input',
     category: 'Inputs',
-    description: 'Aceternity-style search input expanding with organic SVG gooey filter physics, detached floating icon bubble, and smooth actions.',
+    description: 'Aceternity-style search input expanding with organic SVG gooey filter physics and detached floating search bubble.',
     controls: [
-      { name: 'placeholder', type: 'text', defaultValue: 'Type to search…' },
-      { name: 'collapsedWidth', type: 'number', defaultValue: 150 },
-      { name: 'expandedWidth', type: 'number', defaultValue: 280 },
+      { name: 'placeholder', type: 'text', defaultValue: 'Type to search...' },
+      { name: 'collapsedWidth', type: 'number', defaultValue: 115 },
+      { name: 'expandedWidth', type: 'number', defaultValue: 200 },
+      { name: 'expandedOffset', type: 'number', defaultValue: 50 },
+      { name: 'gooeyBlur', type: 'number', defaultValue: 5 },
       { name: 'disabled', type: 'boolean', defaultValue: false },
-      { name: 'showSubmitButton', type: 'boolean', defaultValue: true },
     ],
     render: (props) => (
       <Box sx={{ py: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 120 }}>
         <GooeyInput
           placeholder={String(props.placeholder)}
-          collapsedWidth={Number(props.collapsedWidth) || 150}
-          expandedWidth={Number(props.expandedWidth) || 280}
+          collapsedWidth={Number(props.collapsedWidth) || 115}
+          expandedWidth={Number(props.expandedWidth) || 200}
+          expandedOffset={Number(props.expandedOffset) || 50}
+          gooeyBlur={Number(props.gooeyBlur) || 5}
           disabled={Boolean(props.disabled)}
-          showSubmitButton={Boolean(props.showSubmitButton)}
         />
       </Box>
     ),
     generateCode: (props) =>
-      `<GooeyInput\n  placeholder="${props.placeholder}"\n  collapsedWidth={${props.collapsedWidth}}\n  expandedWidth={${props.expandedWidth}}${props.disabled ? '\n  disabled' : ''}${!props.showSubmitButton ? '\n  showSubmitButton={false}' : ''}\n/>`,
+      `<GooeyInput\n  placeholder="${props.placeholder}"\n  collapsedWidth={${props.collapsedWidth}}\n  expandedWidth={${props.expandedWidth}}\n  expandedOffset={${props.expandedOffset}}\n  gooeyBlur={${props.gooeyBlur}}${props.disabled ? '\n  disabled' : ''}\n/>`,
     sourceCode: FULL_GOOEY_INPUT_TSX,
     scssCode: FULL_GOOEY_INPUT_SCSS,
   },

@@ -1,7 +1,7 @@
 export const FULL_MARKETPLACE_DOCK_TSX = `'use client';
 
 import React, { useState, useRef, useEffect, useId, useCallback } from 'react';
-import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig, LayoutGroup } from 'framer-motion';
 import { Box } from '@mui/material';
 import {
   Home,
@@ -18,6 +18,7 @@ import {
   LifeBuoy,
 } from 'lucide-react';
 import { SmoothInput } from '../SmoothInput';
+import { GooeyInput } from '../GooeyInput';
 import styles from './MarketplaceDock.module.scss';
 
 const SPRING = { type: 'spring', bounce: 0.2, duration: 0.4 } as const;
@@ -30,7 +31,13 @@ const PANEL_VARIANTS = {
 };
 
 /* ─────────── Gooey Filter ─────────── */
-function GooeyFilter({ filterId, blur = 4 }: { filterId: string; blur?: number }) {
+function GooeyFilter({
+  filterId,
+  blur = 6,
+}: {
+  filterId: string;
+  blur?: number;
+}) {
   return (
     <svg className={styles.gooeyFilterSvg} aria-hidden="true">
       <defs>
@@ -49,6 +56,7 @@ function GooeyFilter({ filterId, blur = 4 }: { filterId: string; blur?: number }
   );
 }
 
+/* ─────────── types ─────────── */
 type NavId     = 'home' | 'posts' | 'mypage';
 type PopoverId = 'filter' | 'more';
 type DockId    = NavId | PopoverId | 'search';
@@ -56,10 +64,15 @@ type DockId    = NavId | PopoverId | 'search';
 const NAV_IDS:     NavId[]     = ['home', 'posts', 'mypage'];
 const POPOVER_IDS: PopoverId[] = ['filter', 'more'];
 
+/* ─────────── dimensions ─────────── */
+// 6 icons × 36px + 6px×2 paddings + gaps = 252px closed
 const W_CLOSED = 252;
+// 1 expanded label button + 5 compact + paddings = 310px open
 const W_OPEN   = 310;
+// search bar width
 const W_SEARCH = 280;
 
+/* ─────────── filter options ─────────── */
 const SORT_OPTIONS = [
   { id: 'latest',     label: 'Latest Registered' },
   { id: 'expiry_asc', label: 'Closest Expiry' },
@@ -75,6 +88,7 @@ const EXPIRY_OPTIONS = [
   { id: 'expired',  label: 'Expired',        dotClass: styles.dot_expired },
 ] as const;
 
+/* ─────────── button definitions ─────────── */
 interface DockBtnDef {
   id: DockId;
   label: string;
@@ -90,22 +104,28 @@ const DOCK_BUTTONS: DockBtnDef[] = [
   { id: 'mypage', label: 'Profile', icon: <User size={18} strokeWidth={2} /> },
 ];
 
+/* ─────────── component ─────────── */
 export const MarketplaceDock: React.FC = () => {
   const rawId = useId();
   const safeId = rawId.replace(/:/g, '');
   const filterId = \`marketplace-gooey-filter-\${safeId}\`;
   const searchIconLayoutId = \`dock-search-icon-\${safeId}\`;
 
+  /* nav selection state (default 'home') */
   const [activeNav, setActiveNav] = useState<NavId | null>('home');
+  /* popover state: 'filter' | 'more' | null */
   const [activePopover, setActivePopover] = useState<PopoverId | null>(null);
+  /* search mode boolean */
   const [isSearch, setIsSearch]            = useState(false);
   const [searchQuery, setSearchQuery]      = useState('');
 
+  /* filter selection values */
   const [sortBy, setSortBy]         = useState('latest');
   const [expiryStatus, setExpiryStatus] = useState('all');
   const [minPrice, setMinPrice]     = useState('');
   const [maxPrice, setMaxPrice]     = useState('');
 
+  /* layout state */
   const [direction, setDirection]         = useState<number>(1);
   const [panelHeight, setPanelHeight]     = useState<number>(0);
 
@@ -113,12 +133,14 @@ export const MarketplaceDock: React.FC = () => {
   const panelMeasureRef = useRef<HTMLDivElement>(null);
   const searchInputRef  = useRef<HTMLInputElement>(null);
 
+  /* active item derivation */
   const activeDockId: DockId | null = isSearch
     ? 'search'
     : activePopover !== null
       ? activePopover
       : activeNav;
 
+  /* handle click on any dock button */
   const handleDockClick = (id: DockId) => {
     if (id === 'search') {
       setIsSearch(true);
@@ -143,6 +165,7 @@ export const MarketplaceDock: React.FC = () => {
     setSearchQuery('');
   }, []);
 
+  /* measure panel content height */
   useEffect(() => {
     if (!panelMeasureRef.current) return;
     const observer = new ResizeObserver(entries => {
@@ -156,12 +179,14 @@ export const MarketplaceDock: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
+  /* auto focus search input */
   useEffect(() => {
     if (isSearch) {
       setTimeout(() => searchInputRef.current?.focus(), 50);
     }
   }, [isSearch]);
 
+  /* click outside to close popover / search */
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -173,6 +198,7 @@ export const MarketplaceDock: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleOutside);
   }, [isSearch, exitSearch]);
 
+  /* direction calculation when activePopover changes */
   const prevPopoverRef = useRef<PopoverId | null>(activePopover);
   useEffect(() => {
     if (prevPopoverRef.current && activePopover) {
@@ -186,6 +212,7 @@ export const MarketplaceDock: React.FC = () => {
     prevPopoverRef.current = activePopover;
   }, [activePopover]);
 
+  /* computed width & height */
   const hasPopover = activePopover !== null;
   const anyActive  = activeDockId !== null;
 
@@ -204,94 +231,37 @@ export const MarketplaceDock: React.FC = () => {
 
   return (
     <Box className={styles.wrapper}>
+      {/* SVG Gooey Filter definition */}
       <GooeyFilter filterId={filterId} blur={8} />
 
       <div ref={containerRef} className={styles.innerWrapper}>
-        <AnimatePresence>
+        <LayoutGroup id={safeId}>
+        <AnimatePresence mode="popLayout">
           {isSearch ? (
-            /* Aceternity Gooey Search Input */
+            /* ── Gooey Search Mode ── */
             <motion.div
               key="gooey-search"
               className={styles.gooeyFilterWrap}
-              style={{ filter: \`url(#\${filterId})\` }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
             >
-              {/* Expanding search pill: pulls away to the right */}
-              <motion.div
-                className={styles.searchBarMotion}
-                variants={{
-                  collapsed: { width: 48, marginLeft: 0 },
-                  expanded:  { width: 250, marginLeft: 60 },
+              <GooeyInput
+                placeholder="Search products…"
+                defaultExpanded={true}
+                value={searchQuery}
+                onValueChange={setSearchQuery}
+                onOpenChange={(open) => {
+                  if (!open) exitSearch();
                 }}
-                initial="collapsed"
-                animate="expanded"
-                exit="collapsed"
-                transition={{ type: 'spring', bounce: 0.28, duration: 0.85 }}
-              >
-                <motion.div
-                  className={styles.searchPillSurface}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ delay: 0.15, duration: 0.3 }}
-                >
-                  <div className={styles.searchInputContainer}>
-                    <SmoothInput
-                      ref={searchInputRef}
-                      type="search"
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      placeholder="Search products…"
-                      className={styles.searchInput}
-                      wrapperClassName={styles.searchSmoothWrapper}
-                      isDockMode
-                      onKeyDown={e => {
-                        if (e.key === 'Escape') exitSearch();
-                      }}
-                    />
-                  </div>
-
-                  <div className={styles.searchRightAction}>
-                    <motion.button
-                      type="button"
-                      className={styles.searchCloseBtn}
-                      onClick={() => {
-                        if (searchQuery) {
-                          setSearchQuery('');
-                          searchInputRef.current?.focus();
-                        } else {
-                          exitSearch();
-                        }
-                      }}
-                      aria-label="Close search"
-                      title={searchQuery ? 'Clear text' : 'Close search (Esc)'}
-                      whileHover={{ scale: 1.08 }}
-                      whileTap={{ scale: 0.92 }}
-                    >
-                      <X size={15} strokeWidth={2.2} />
-                    </motion.button>
-                  </div>
-                </motion.div>
-              </motion.div>
-
-              {/* Detached icon bubble anchored at left: 0 */}
-              <motion.div
-                className={styles.bubbleMotion}
-                variants={{
-                  collapsed: { scale: 0.2, opacity: 0 },
-                  expanded:  { scale: 1, opacity: 1 },
-                }}
-                initial="collapsed"
-                animate="expanded"
-                exit="collapsed"
-                transition={{ type: 'spring', bounce: 0.28, duration: 0.85 }}
-                onClick={() => searchInputRef.current?.focus()}
-              >
-                <div className={styles.bubbleSurface}>
-                  <Search size={18} strokeWidth={2} className={styles.bubbleIcon} />
-                </div>
-              </motion.div>
+                collapsedWidth={115}
+                expandedWidth={220}
+                expandedOffset={50}
+              />
             </motion.div>
           ) : (
+            /* ── Normal Dock Navigation ── */
             <motion.div
               key="normal-dock-wrapper"
               initial={{ opacity: 0 }}
@@ -305,6 +275,7 @@ export const MarketplaceDock: React.FC = () => {
                   animate={{ width: currentWidth, height: currentHeight }}
                   className={styles.container}
                 >
+                  {/* ── Popover Panel ── */}
                   <div ref={panelMeasureRef}>
                     <AnimatePresence mode="popLayout" initial={false} custom={direction}>
                       {hasPopover && (
@@ -319,7 +290,9 @@ export const MarketplaceDock: React.FC = () => {
                         >
                           {activePopover === 'filter' && (
                             <div className={styles.popoverContent}>
+                              {/* Two-column top row: Sort By & Expiry Status */}
                               <div className={styles.filterTopRow}>
+                                {/* Left: Sort By */}
                                 <div className={styles.filterSection}>
                                   <span className={styles.sectionLabel}>Sort By</span>
                                   <div className={styles.blockList}>
@@ -341,6 +314,7 @@ export const MarketplaceDock: React.FC = () => {
 
                                 <div className={styles.filterDivider} />
 
+                                {/* Right: Expiry Status */}
                                 <div className={styles.filterSection}>
                                   <span className={styles.sectionLabel}>Expiry</span>
                                   <div className={styles.blockList}>
@@ -361,6 +335,7 @@ export const MarketplaceDock: React.FC = () => {
                                 </div>
                               </div>
 
+                              {/* Bottom: Price Range inputs */}
                               <div className={styles.filterSection}>
                                 <span className={styles.sectionLabel}>Price Range</span>
                                 <div className={styles.priceRow}>
@@ -427,10 +402,12 @@ export const MarketplaceDock: React.FC = () => {
                     </AnimatePresence>
                   </div>
 
+                  {/* ── Dock bar (absolute bottom) ── */}
                   <div className={styles.dockBar}>
                     <div className={styles.tabList} role="tablist">
                       {DOCK_BUTTONS.map(btn => {
                         const active = isButtonActive(btn.id);
+                        const isSearchBtn = btn.id === 'search';
                         return (
                           <motion.button
                             key={btn.id}
@@ -448,9 +425,20 @@ export const MarketplaceDock: React.FC = () => {
                             onClick={() => handleDockClick(btn.id)}
                             className={\`\${styles.tabButton} \${active ? styles.activeTab : ''}\`}
                           >
-                            <span className={styles.iconSpan}>
-                              {btn.icon}
-                            </span>
+                            {isSearchBtn ? (
+                              /* The search icon shares layoutId so it animates to gooey search bubble */
+                              <motion.span
+                                layoutId={searchIconLayoutId}
+                                className={styles.iconSpan}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                              >
+                                {btn.icon}
+                              </motion.span>
+                            ) : (
+                              <span className={styles.iconSpan}>
+                                {btn.icon}
+                              </span>
+                            )}
                             <AnimatePresence initial={false}>
                               {active && (
                                 <motion.span
@@ -474,13 +462,17 @@ export const MarketplaceDock: React.FC = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        </LayoutGroup>
       </div>
     </Box>
   );
-};`;
+};
+
+`;
 
 export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss" as *;
 
+/* ── Outer wrapper ── */
 .wrapper {
   display: flex;
   height: 100%;
@@ -500,17 +492,19 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
 .gooeyFilterWrap {
   position: relative;
   display: flex;
+  flex-direction: row;
   height: 48px;
   align-items: center;
   justify-content: center;
+  gap: 8px;
 }
 
 .searchBarMotion {
   display: flex;
   height: 48px;
   align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  justify-content: flex-start;
+  flex-shrink: 0;
 }
 
 .searchPillSurface {
@@ -523,26 +517,23 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   color: #0f172a;
   padding: 0 10px 0 16px;
   box-sizing: border-box;
-  overflow: hidden;
-  white-space: nowrap;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08), 0 16px 40px -10px rgba(0, 0, 0, 0.12);
+  transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
 
   :global([data-theme='dark']) & {
     background: #1a1f2e;
     color: #f1f5f9;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 20px 50px -12px rgba(0, 0, 0, 0.7);
   }
 }
 
 .bubbleMotion {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  margin: auto 0;
   display: flex;
   width: 48px;
   height: 48px;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   cursor: pointer;
 }
 
@@ -555,26 +546,33 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   border-radius: 9999px;
   background: #ffffff;
   color: #0f172a;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08), 0 16px 40px -10px rgba(0, 0, 0, 0.12);
+  transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
 
   :global([data-theme='dark']) & {
     background: #1a1f2e;
     color: #f1f5f9;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 20px 50px -12px rgba(0, 0, 0, 0.7);
   }
-}
 
-.bubbleIcon {
-  display: block;
+  &:hover {
+    transform: scale(1.05);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
 }
 
 .gooeyFilterSvg {
   position: absolute;
   width: 0;
   height: 0;
+  overflow: hidden;
   pointer-events: none;
-  visibility: hidden;
-  opacity: 0;
 }
 
+/* ── Animated outer card ── */
 .container {
   position: relative;
   margin: 0 auto;
@@ -592,18 +590,23 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   }
 }
 
+/* ── Popover panel above dock ── */
 .panelWrap {
   padding: 14px 14px 56px 14px;
   box-sizing: border-box;
   width: 100%;
 }
 
+/* ── Shared popover content ── */
 .popoverContent {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* ─── Filter layout ─── */
+
+/* Two-column top row: Sort By | Expiry Status */
 .filterTopRow {
   display: flex;
   gap: 0;
@@ -615,6 +618,7 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   }
 }
 
+/* vertical separator between the two columns */
 .filterDivider {
   width: 1px;
   background: rgba(0, 0, 0, 0.08);
@@ -647,6 +651,7 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   }
 }
 
+/* ── Block list options (Sort By & Expiry) ── */
 .blockList {
   display: flex;
   flex-direction: column;
@@ -711,12 +716,14 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   }
 }
 
+/* colored dots for expiry status */
 .dot_all      { background: #64748b; }
 .dot_normal   { background: #10b981; }
 .dot_warning  { background: #f59e0b; }
 .dot_critical { background: #f97316; }
 .dot_expired  { background: #ef4444; }
 
+/* price range */
 .priceRow {
   display: flex;
   align-items: center;
@@ -781,8 +788,101 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   :global([data-theme='dark']) & {
     color: #ffffff;
   }
+
+  &::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+
+    :global([data-theme='dark']) & {
+      color: rgba(255, 255, 255, 0.28);
+    }
+  }
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
+.priceSep {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #94a3b8;
+  flex-shrink: 0;
+  line-height: 1;
+
+  :global([data-theme='dark']) & {
+    color: rgba(255, 255, 255, 0.25);
+  }
+}
+
+/* ─── More links ─── */
+.moreLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: none;
+  background: transparent;
+  color: #334155;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  width: 100%;
+  text-align: left;
+
+  :global([data-theme='dark']) & {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: #0f172a;
+
+    :global([data-theme='dark']) & {
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+    }
+
+    .moreLinkArrow { opacity: 1; transform: translateX(2px); }
+  }
+}
+
+.moreLinkLeft {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.moreLinkIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  flex-shrink: 0;
+
+  :global([data-theme='dark']) & {
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .moreLink:hover & {
+    color: #0f172a;
+
+    :global([data-theme='dark']) & {
+      color: rgba(255, 255, 255, 0.75);
+    }
+  }
+}
+
+.moreLinkArrow {
+  opacity: 0.4;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+/* ─── Dock bar ─── */
 .dockBar {
   position: absolute;
   bottom: 0;
@@ -792,8 +892,13 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   display: flex;
   align-items: center;
   background: inherit;
+
+  :global([data-theme='dark']) & {
+    background: inherit;
+  }
 }
 
+/* ─── Search mode ─── */
 .searchRow {
   display: flex;
   align-items: center;
@@ -904,6 +1009,7 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   }
 }
 
+/* ─── Normal dock button row ─── */
 .tabList {
   display: flex;
   height: 100%;
@@ -973,12 +1079,27 @@ export const FULL_MARKETPLACE_DOCK_SCSS = `@use "../../../styles/variables.scss"
   }
 }
 
+.iconSpan {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .dockGifIcon {
   width: 20px;
   height: 20px;
   object-fit: contain;
   display: block;
-}`;
+}
+
+.labelSpan {
+  overflow: hidden;
+  white-space: nowrap;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+`;
 
 export const FULL_EXPANDABLE_TABS_TSX = `'use client';
 
@@ -1615,27 +1736,31 @@ import React, {
   useRef,
   useEffect,
   useId,
+  useMemo,
   useCallback,
   type ChangeEvent,
   type KeyboardEvent,
-  forwardRef,
-  useImperativeHandle,
 } from 'react';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-import { Search, X, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 import styles from './GooeyInput.module.scss';
 
-/* ─── Gooey SVG Filter ─── */
-function GooeyFilter({ filterId, blur = 6 }: { filterId: string; blur?: number }) {
+function GooeyFilter({
+  filterId,
+  blur,
+}: {
+  filterId: string;
+  blur: number;
+}) {
   return (
-    <svg className={styles.filterSvg} aria-hidden="true">
+    <svg className={styles.filterSvg} aria-hidden>
       <defs>
         <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur in="SourceGraphic" stdDeviation={blur} result="blur" />
           <feColorMatrix
             in="blur"
             type="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -9"
+            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 20 -10"
             result="goo"
           />
           <feComposite in="SourceGraphic" in2="goo" operator="atop" />
@@ -1645,498 +1770,425 @@ function GooeyFilter({ filterId, blur = 6 }: { filterId: string; blur?: number }
   );
 }
 
-const SPRING_CONFIG = {
+function SearchIcon({ layoutId }: { layoutId: string }) {
+  return (
+    <motion.svg
+      layoutId={layoutId}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      className={styles.searchIcon}
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </motion.svg>
+  );
+}
+
+const transition = {
+  duration: 0.4,
   type: 'spring' as const,
-  stiffness: 400,
-  damping: 28,
-  mass: 0.8,
+  bounce: 0.25,
 };
+
+const iconBubbleVariants = {
+  collapsed: { scale: 0, opacity: 0 },
+  expanded: { scale: 1, opacity: 1 },
+};
+
+export interface GooeyInputClassNames {
+  root?: string;
+  filterWrap?: string;
+  buttonRow?: string;
+  trigger?: string;
+  input?: string;
+  bubble?: string;
+  bubbleSurface?: string;
+}
 
 export interface GooeyInputProps {
   placeholder?: string;
+  className?: string;
+  classNames?: GooeyInputClassNames;
+  /** Collapsed control width in px */
   collapsedWidth?: number;
+  /** Expanded control width in px */
   expandedWidth?: number;
+  /** Horizontal offset when expanded (px), aligns detached bubble */
+  expandedOffset?: number;
+  /** Gaussian blur amount for the gooey SVG filter */
   gooeyBlur?: number;
   value?: string;
   defaultValue?: string;
-  onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
   onValueChange?: (value: string) => void;
-  onSubmit?: (value: string) => void;
   onOpenChange?: (open: boolean) => void;
   disabled?: boolean;
-  showSubmitButton?: boolean;
-  className?: string;
+  defaultExpanded?: boolean;
 }
 
-export type GooeyInputHandle = {
-  focus: () => void;
-  clear: () => void;
-  expand: () => void;
-  collapse: () => void;
-  getValue: () => string;
-};
+export function GooeyInput({
+  placeholder = 'Type to search...',
+  className = '',
+  classNames,
+  collapsedWidth = 115,
+  expandedWidth = 200,
+  expandedOffset = 50,
+  gooeyBlur = 5,
+  value: valueProp,
+  defaultValue = '',
+  onValueChange,
+  onOpenChange,
+  disabled = false,
+  defaultExpanded = false,
+}: GooeyInputProps) {
+  const reactId = useId();
+  const safeId = reactId.replace(/:/g, '');
+  const filterId = \`gooey-filter-\${safeId}\`;
+  const iconLayoutId = \`gooey-input-icon-\${safeId}\`;
+  const inputLayoutId = \`gooey-input-field-\${safeId}\`;
 
-export const GooeyInput = forwardRef<GooeyInputHandle, GooeyInputProps>(
-  (
-    {
-      placeholder = 'Type to search…',
-      collapsedWidth = 150,
-      expandedWidth = 280,
-      gooeyBlur = 6,
-      value: controlledValue,
-      defaultValue = '',
-      onChange,
-      onValueChange,
-      onSubmit,
-      onOpenChange,
-      disabled = false,
-      showSubmitButton = true,
-      className = '',
+  const inputRef = useRef<HTMLInputElement>(null);
+  const prevExpandedRef = useRef(defaultExpanded);
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
+
+  const isControlled = valueProp !== undefined;
+  const searchText = isControlled ? valueProp : uncontrolledValue;
+
+  const setSearchText = useCallback(
+    (next: string) => {
+      if (!isControlled) {
+        setUncontrolledValue(next);
+      }
+      onValueChange?.(next);
     },
-    ref
-  ) => {
-    const reactId = useId();
-    const safeId = reactId.replace(/[^a-zA-Z0-9]/g, '');
-    const filterId = \`gooey-filter-\${safeId}\`;
-    const iconLayoutId = \`gooey-icon-\${safeId}\`;
+    [isControlled, onValueChange]
+  );
 
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
+  const setExpanded = useCallback(
+    (next: boolean) => {
+      setIsExpanded(next);
+      onOpenChange?.(next);
+    },
+    [onOpenChange]
+  );
 
-    const isControlled = controlledValue !== undefined;
-    const inputValue = isControlled ? controlledValue : uncontrolledValue;
-
-    const inputRef = useRef<HTMLInputElement>(null);
-    const rootRef = useRef<HTMLDivElement>(null);
-
-    const setExpanded = useCallback(
-      (nextState: boolean) => {
-        if (disabled) return;
-        setIsExpanded(nextState);
-        onOpenChange?.(nextState);
-      },
-      [disabled, onOpenChange]
-    );
-
-    const setInputValue = useCallback(
-      (nextVal: string) => {
-        if (!isControlled) setUncontrolledValue(nextVal);
-        onValueChange?.(nextVal);
-      },
-      [isControlled, onValueChange]
-    );
-
-    const handleExpand = useCallback(() => {
-      if (disabled || isExpanded) return;
-      setExpanded(true);
-    }, [disabled, isExpanded, setExpanded]);
-
-    const handleCollapse = useCallback(() => {
-      setExpanded(false);
-    }, [setExpanded]);
-
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-      setInputValue(e.target.value);
-      onChange?.(e);
-    };
-
-    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Escape') {
-        if (inputValue) {
-          setInputValue('');
-        } else {
-          handleCollapse();
-        }
-      } else if (e.key === 'Enter') {
-        onSubmit?.(inputValue);
-      }
-    };
-
-    const handleSubmit = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onSubmit?.(inputValue);
-    };
-
-    const handleClear = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setInputValue('');
+  useEffect(() => {
+    if (isExpanded) {
       inputRef.current?.focus();
-    };
+    } else if (prevExpandedRef.current) {
+      setSearchText('');
+    }
+    prevExpandedRef.current = isExpanded;
+  }, [isExpanded, setSearchText]);
 
-    useEffect(() => {
-      if (isExpanded) {
-        const timer = setTimeout(() => {
-          inputRef.current?.focus();
-        }, 60);
-        return () => clearTimeout(timer);
-      }
-    }, [isExpanded]);
+  const buttonVariants = useMemo(
+    () => ({
+      collapsed: { width: collapsedWidth, marginLeft: 0 },
+      expanded: { width: expandedWidth, marginLeft: expandedOffset },
+    }),
+    [collapsedWidth, expandedWidth, expandedOffset]
+  );
 
-    useEffect(() => {
-      const handleClickOutside = (e: MouseEvent) => {
-        if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-          if (!inputValue) {
-            setExpanded(false);
-          }
+  const handleExpand = useCallback(() => {
+    if (!disabled) setExpanded(true);
+  }, [disabled, setExpanded]);
+
+  const handleChange = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      setSearchText(e.target.value);
+    },
+    [setSearchText]
+  );
+
+  const handleBlur = useCallback(() => {
+    if (!searchText) setExpanded(false);
+  }, [searchText, setExpanded]);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Escape') {
+        if (searchText) {
+          setSearchText('');
+        } else {
+          setExpanded(false);
         }
-      };
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [inputValue, setExpanded]);
+      }
+    },
+    [searchText, setSearchText, setExpanded]
+  );
 
-    useImperativeHandle(ref, () => ({
-      focus: () => inputRef.current?.focus(),
-      clear: () => setInputValue(''),
-      expand: () => setExpanded(true),
-      collapse: () => setExpanded(false),
-      getValue: () => inputValue,
-    }));
+  return (
+    <div
+      className={\`\${styles.root} \${className} \${classNames?.root || ''}\`}
+    >
+      <GooeyFilter filterId={filterId} blur={gooeyBlur} />
 
-    return (
-      <div ref={rootRef} className={\`\${styles.root} \${className}\`}>
-        <GooeyFilter filterId={filterId} blur={gooeyBlur} />
-
-        <LayoutGroup id={safeId}>
+      <div
+        className={\`\${styles.filterWrap} \${classNames?.filterWrap || ''}\`}
+        style={{ filter: \`url(#\${filterId})\` }}
+      >
+        <motion.div
+          className={\`\${styles.buttonRow} \${classNames?.buttonRow || ''}\`}
+          variants={buttonVariants}
+          initial={defaultExpanded ? 'expanded' : 'collapsed'}
+          animate={isExpanded ? 'expanded' : 'collapsed'}
+          transition={transition}
+        >
           <div
-            className={styles.gooeyFilterWrap}
-            style={{ filter: \`url(#\${filterId})\` }}
+            role="button"
+            tabIndex={0}
+            onClick={handleExpand}
+            className={\`\${styles.surface} \${styles.trigger} \${classNames?.trigger || ''}\`}
           >
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div
-                  key="detached-bubble"
-                  className={styles.bubbleMotion}
-                  initial={{ scale: 0.2, opacity: 0, x: 20 }}
-                  animate={{ scale: 1, opacity: 1, x: 0 }}
-                  exit={{ scale: 0.2, opacity: 0, x: 20 }}
-                  transition={SPRING_CONFIG}
-                  onClick={() => inputRef.current?.focus()}
-                >
-                  <div className={styles.bubbleSurface}>
-                    <motion.div layoutId={iconLayoutId} className={styles.iconCenter}>
-                      <Search size={18} strokeWidth={2.2} />
-                    </motion.div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <motion.div
-              layout
-              className={styles.pillMotion}
-              initial={false}
-              animate={{
-                width: isExpanded ? expandedWidth : collapsedWidth,
-              }}
-              transition={SPRING_CONFIG}
-              onClick={handleExpand}
-            >
-              <div
-                className={\`\${styles.pillSurface} \${
-                  isExpanded ? styles.pillSurfaceExpanded : styles.pillSurfaceCollapsed
-                }\`}
+            {!isExpanded ? (
+              <SearchIcon layoutId={iconLayoutId} />
+            ) : null}
+            <motion.input
+              layoutId={inputLayoutId}
+              ref={inputRef}
+              type="search"
+              enterKeyHint="search"
+              autoComplete="off"
+              value={searchText}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
+              disabled={disabled || !isExpanded}
+              placeholder={placeholder}
+              className={\`\${styles.input} \${
+                isExpanded ? styles.inputExpanded : styles.inputCollapsed
+              } \${classNames?.input || ''}\`}
+            />
+            {isExpanded && (
+              <motion.button
+                type="button"
+                className={styles.closeBtn}
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.7 }}
+                transition={{ duration: 0.15 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (searchText) {
+                    setSearchText('');
+                    inputRef.current?.focus();
+                  } else {
+                    setExpanded(false);
+                  }
+                }}
+                aria-label="Clear or close search"
+                title={searchText ? 'Clear text' : 'Close search (Esc)'}
               >
-                {!isExpanded && (
-                  <motion.div layoutId={iconLayoutId} className={styles.collapsedIconWrap}>
-                    <Search size={16} strokeWidth={2.2} className={styles.searchIcon} />
-                  </motion.div>
-                )}
-
-                <div className={styles.inputContainer}>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputValue}
-                    onChange={handleChange}
-                    onKeyDown={handleKeyDown}
-                    placeholder={placeholder}
-                    disabled={disabled || !isExpanded}
-                    className={styles.inputElement}
-                    aria-label="Search"
-                  />
-                </div>
-
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      className={styles.rightActionWrap}
-                      initial={{ opacity: 0, scale: 0.6 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.6 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      {inputValue ? (
-                        <div className={styles.actionGroup}>
-                          <button
-                            type="button"
-                            className={styles.actionBtn}
-                            onClick={handleClear}
-                            aria-label="Clear input"
-                            title="Clear"
-                          >
-                            <X size={14} strokeWidth={2.4} />
-                          </button>
-                          {showSubmitButton && (
-                            <button
-                              type="button"
-                              className={\`\${styles.actionBtn} \${styles.actionSubmitBtn}\`}
-                              onClick={handleSubmit}
-                              aria-label="Submit search"
-                              title="Submit (Enter)"
-                            >
-                              <ArrowRight size={14} strokeWidth={2.4} />
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          className={styles.actionBtn}
-                          onClick={handleCollapse}
-                          aria-label="Close search"
-                          title="Close (Esc)"
-                        >
-                          <X size={14} strokeWidth={2.4} />
-                        </button>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </motion.div>
+                <X size={14} strokeWidth={2.4} />
+              </motion.button>
+            )}
           </div>
-        </LayoutGroup>
-      </div>
-    );
-  }
-);
+        </motion.div>
 
-GooeyInput.displayName = 'GooeyInput';`;
+        <motion.div
+          className={\`\${styles.bubble} \${classNames?.bubble || ''}\`}
+          variants={iconBubbleVariants}
+          initial={defaultExpanded ? 'expanded' : 'collapsed'}
+          animate={isExpanded ? 'expanded' : 'collapsed'}
+          transition={transition}
+          onClick={() => inputRef.current?.focus()}
+        >
+          <div
+            className={\`\${styles.surface} \${styles.bubbleSurface} \${classNames?.bubbleSurface || ''}\`}
+          >
+            <SearchIcon layoutId={iconLayoutId} />
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+export default GooeyInput;
+`;
 
 export const FULL_GOOEY_INPUT_SCSS = `@use "../../../styles/variables.scss" as *;
 
 .root {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-family: inherit;
   user-select: none;
 }
 
 .filterSvg {
   position: absolute;
-  width: 0;
   height: 0;
+  width: 0;
+  overflow: hidden;
   pointer-events: none;
-  visibility: hidden;
-  opacity: 0;
 }
 
-.gooeyFilterWrap {
+.filterWrap {
   position: relative;
   display: flex;
-  flex-direction: row;
-  height: 48px;
+  height: 40px;
   align-items: center;
   justify-content: center;
-  gap: 10px;
 }
 
-.bubbleMotion {
+.buttonRow {
   display: flex;
-  width: 48px;
-  height: 48px;
+  height: 40px;
   align-items: center;
   justify-content: center;
+}
+
+/* ── Surface styling (bg-foreground text-background) ── */
+.surface {
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+
+  :global([data-theme='dark']) & {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+.trigger {
+  display: flex;
+  height: 40px;
+  width: 100%;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 9999px;
+  padding: 0 14px 0 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  outline: none;
+  border: none;
+  box-sizing: border-box;
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px #6366f1, 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  &:disabled {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+}
+
+.input {
+  height: 100%;
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  font-size: 0.875rem;
+  outline: none;
+  border: none;
+  font-family: inherit;
+  color: inherit;
+
+  &::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    transition: color 0.2s ease;
+
+    :global([data-theme='dark']) & {
+      color: rgba(15, 23, 42, 0.5);
+    }
+  }
+}
+
+.inputCollapsed {
+  pointer-events: none;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.8);
+
+    :global([data-theme='dark']) & {
+      color: rgba(15, 23, 42, 0.75);
+    }
+  }
+}
+
+.inputExpanded {
+  pointer-events: auto;
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
   flex-shrink: 0;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+
+  :global([data-theme='dark']) & {
+    background: rgba(0, 0, 0, 0.08);
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+
+    :global([data-theme='dark']) & {
+      background: rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+}
+
+.bubble {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  margin: auto 0;
+  display: flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
 .bubbleSurface {
   display: flex;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: #0f172a;
-  color: #f8fafc;
-  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.35);
-  transition: background-color 0.25s ease, color 0.25s ease, transform 0.15s ease;
-
-  :global([data-theme='dark']) & {
-    background: #ffffff;
-    color: #0f172a;
-    box-shadow: 0 8px 24px -4px rgba(255, 255, 255, 0.2);
-  }
-
-  &:hover {
-    transform: scale(1.04);
-  }
-
-  &:active {
-    transform: scale(0.96);
-  }
-}
-
-.iconCenter {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.pillMotion {
-  display: flex;
-  height: 48px;
-  align-items: center;
-  justify-content: flex-start;
-  flex-shrink: 0;
-}
-
-.pillSurface {
-  display: flex;
-  align-items: center;
-  height: 48px;
-  width: 100%;
-  border-radius: 9999px;
-  background: #0f172a;
-  color: #f8fafc;
-  padding: 0 16px;
-  box-sizing: border-box;
-  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.35);
-  transition: background-color 0.25s ease, color 0.25s ease;
-  overflow: hidden;
-
-  :global([data-theme='dark']) & {
-    background: #ffffff;
-    color: #0f172a;
-    box-shadow: 0 8px 24px -4px rgba(255, 255, 255, 0.2);
-  }
-}
-
-.pillSurfaceCollapsed {
-  cursor: pointer;
-  justify-content: flex-start;
-  gap: 8px;
-
-  &:hover {
-    opacity: 0.94;
-  }
-}
-
-.pillSurfaceExpanded {
-  cursor: default;
-  padding: 0 12px 0 18px;
-}
-
-.collapsedIconWrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  border: none;
 }
 
 .searchIcon {
-  color: inherit;
-  opacity: 0.85;
-}
-
-.inputContainer {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  height: 100%;
-}
-
-.inputElement {
-  width: 100%;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-family: inherit;
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: inherit;
-  letter-spacing: -0.01em;
-
-  &::placeholder {
-    color: rgba(248, 250, 252, 0.55);
-    font-weight: 400;
-
-    :global([data-theme='dark']) & {
-      color: rgba(15, 23, 42, 0.45);
-    }
-  }
-
-  .pillSurfaceCollapsed & {
-    cursor: pointer;
-    pointer-events: none;
-  }
-}
-
-.rightActionWrap {
-  display: flex;
-  align-items: center;
-  margin-left: 8px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
 }
-
-.actionGroup {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.actionBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 9999px;
-  border: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: #f8fafc;
-  cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.15s ease;
-
-  :global([data-theme='dark']) & {
-    background: rgba(15, 23, 42, 0.08);
-    color: #0f172a;
-  }
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: scale(1.08);
-
-    :global([data-theme='dark']) & {
-      background: rgba(15, 23, 42, 0.14);
-    }
-  }
-
-  &:active {
-    transform: scale(0.92);
-  }
-}
-
-.actionSubmitBtn {
-  background: #6366f1;
-  color: #ffffff;
-
-  :global([data-theme='dark']) & {
-    background: #4f46e5;
-    color: #ffffff;
-  }
-
-  &:hover {
-    background: #4f46e5;
-
-    :global([data-theme='dark']) & {
-      background: #4338ca;
-    }
-  }
-}`;
+`;
