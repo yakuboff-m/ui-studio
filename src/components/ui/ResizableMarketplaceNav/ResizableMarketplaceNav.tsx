@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useId, useCallback } from 'react';
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
+import { SmoothInput } from '../SmoothInput/SmoothInput';
 import {
   Home,
   FileText,
@@ -443,10 +444,11 @@ export const ResizableMarketplaceNav: React.FC<ResizableMarketplaceNavProps> = (
                     /* ─── EXPANDED SEARCH ─── */
                     <motion.div key="expanded" className={styles.expandedRow}
                       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={FAST_FADE}>
-                      <input ref={inputRef} type="search" value={searchText}
+                      <SmoothInput ref={inputRef} value={searchText}
                         onChange={e => setSearchText(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Escape') handleCollapseSearch(); }}
-                        placeholder="Search products…" className={styles.searchInput} />
+                        placeholder="Search products…" className={styles.searchInput}
+                        isDockMode />
                       <button type="button" className={styles.closeBtn} onClick={handleCollapseSearch} aria-label="Close">
                         <X size={14} strokeWidth={2.4} />
                       </button>
