@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Box, Typography, IconButton, Tooltip, TextField, InputAdornment, Button } from '@mui/material';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
@@ -34,9 +35,12 @@ import {
   GooeyInput,
   ExpandableTabs,
   MarketplaceDock,
+  ResizableMarketplaceNav,
 } from '@/components/ui';
 
 import {
+  FULL_RESIZABLE_NAV_TSX,
+  FULL_RESIZABLE_NAV_SCSS,
   FULL_MARKETPLACE_DOCK_TSX,
   FULL_MARKETPLACE_DOCK_SCSS,
   FULL_EXPANDABLE_TABS_TSX,
@@ -152,6 +156,28 @@ const SKIPER96_ITEMS = [
 ];
 
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'resizable-marketplace-nav',
+    name: 'Resizable Navbar & Sticky Dock',
+    category: 'Navigation',
+    description: 'Composite experience: Resizable top navbar with large search bar & 3 actions (cart, notifications, blue avatar K) combined with bottom sticky Marketplace Dock that morphs into Gooey Input on scroll down.',
+    controls: [
+      { name: 'topPlaceholder', type: 'text', defaultValue: 'Search curated marketplace products, brands, or categories…' },
+      { name: 'scrollThreshold', type: 'number', defaultValue: 80 },
+    ],
+    render: (props) => (
+      <Box sx={{ width: '100%', my: 0 }}>
+        <ResizableMarketplaceNav
+          topPlaceholder={String(props.topPlaceholder)}
+          scrollThreshold={Number(props.scrollThreshold) || 80}
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `<ResizableMarketplaceNav\n  topPlaceholder="${props.topPlaceholder}"\n  scrollThreshold={${props.scrollThreshold}}\n/>`,
+    sourceCode: FULL_RESIZABLE_NAV_TSX,
+    scssCode: FULL_RESIZABLE_NAV_SCSS,
+  },
   {
     id: 'marketplace-dock',
     name: 'Marketplace Dock',
@@ -370,15 +396,52 @@ const COMPONENT_REGISTRY: RegisteredComponent[] = [
 ];
 
 export const PlaygroundShell: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { mode, toggleTheme } = useThemeMode();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showcaseTab, setShowcaseTab] = useState<'preview' | 'code'>('preview');
+
+  const urlComponentId = searchParams.get('c') || searchParams.get('component') || null;
+  const urlTab = (searchParams.get('tab') as 'preview' | 'controls' | 'code') || 'preview';
+
+  const [selectedId, setSelectedId] = useState<string | null>(urlComponentId);
+  const [showcaseTab, setShowcaseTab] = useState<'preview' | 'controls' | 'code'>(urlTab);
   const [deviceMode, setDeviceMode] = useState<CanvasDeviceMode>('desktop');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   const canvasBg = mode === 'dark' ? 'mesh' : 'light';
+
+  // Synchronize state when URL changes (e.g. browser Back / Forward / Refresh)
+  useEffect(() => {
+    setSelectedId(urlComponentId);
+    if (urlTab === 'preview' || urlTab === 'controls' || urlTab === 'code') {
+      setShowcaseTab(urlTab);
+    }
+  }, [urlComponentId, urlTab]);
+
+  const navigateToComponent = useCallback(
+    (id: string | null, tab: 'preview' | 'controls' | 'code' = 'preview') => {
+      setSelectedId(id);
+      setShowcaseTab(tab);
+      if (id) {
+        router.push(`/?c=${encodeURIComponent(id)}&tab=${tab}`, { scroll: false });
+      } else {
+        router.push(`/`, { scroll: false });
+      }
+    },
+    [router]
+  );
+
+  const switchTab = useCallback(
+    (tab: 'preview' | 'controls' | 'code') => {
+      setShowcaseTab(tab);
+      if (selectedId) {
+        router.replace(`/?c=${encodeURIComponent(selectedId)}&tab=${tab}`, { scroll: false });
+      }
+    },
+    [router, selectedId]
+  );
 
   // Maintain live prop values per component
   const [propState, setPropState] = useState<Record<string, Record<string, PropControlValue>>>(() => {
@@ -423,7 +486,7 @@ export const PlaygroundShell: React.FC = () => {
       {/* ─── 1. Our Brand Top Floating Navbar ─── */}
       <Box className={styles.topNavWrapper}>
         <Box className={styles.topNavbar}>
-          <Box className={styles.logoBrand} onClick={() => setSelectedId(null)}>
+          <Box className={styles.logoBrand} onClick={() => navigateToComponent(null)}>
             <WidgetsIcon sx={{ color: '#6366f1', fontSize: 24 }} />
             <span>Component Studio</span>
           </Box>
@@ -431,7 +494,7 @@ export const PlaygroundShell: React.FC = () => {
           <Box className={styles.navLinks}>
             <span
               className={`${styles.navLink} ${selectedId === null ? styles.activeLink : ''}`}
-              onClick={() => setSelectedId(null)}
+              onClick={() => navigateToComponent(null)}
             >
               Components
             </span>
@@ -443,7 +506,7 @@ export const PlaygroundShell: React.FC = () => {
             <button
               type="button"
               className={styles.cmdKBtn}
-              onClick={() => setSelectedId(null)}
+              onClick={() => navigateToComponent(null)}
             >
               <SearchIcon sx={{ fontSize: 15 }} />
               <span>Search components</span>
@@ -515,7 +578,7 @@ export const PlaygroundShell: React.FC = () => {
               {filteredComponents.map((comp) => (
                 <Box key={comp.id} className={styles.componentCard}>
                   {/* Card Live Interactive Preview */}
-                  <Box className={styles.cardPreviewCanvas}>
+                  <Box className={styles.cardPreviewCanvas} onClick={() => navigateToComponent(comp.id, 'preview')} sx={{ cursor: 'pointer' }}>
                     {comp.render(propState[comp.id] || {})}
                   </Box>
 
@@ -538,10 +601,7 @@ export const PlaygroundShell: React.FC = () => {
                         size="small"
                         variant="contained"
                         startIcon={<LaunchIcon fontSize="small" />}
-                        onClick={() => {
-                          setSelectedId(comp.id);
-                          setShowcaseTab('preview');
-                        }}
+                        onClick={() => navigateToComponent(comp.id, 'preview')}
                         sx={{
                           textTransform: 'none',
                           fontSize: '0.8rem',
@@ -551,17 +611,14 @@ export const PlaygroundShell: React.FC = () => {
                           '&:hover': { background: '#4f46e5' },
                         }}
                       >
-                        Preview & Controls
+                        Preview &amp; Controls
                       </Button>
 
                       <Button
                         size="small"
                         variant="outlined"
                         startIcon={<CodeIcon fontSize="small" />}
-                        onClick={() => {
-                          setSelectedId(comp.id);
-                          setShowcaseTab('code');
-                        }}
+                        onClick={() => navigateToComponent(comp.id, 'code')}
                         sx={{
                           textTransform: 'none',
                           fontSize: '0.8rem',
@@ -585,7 +642,7 @@ export const PlaygroundShell: React.FC = () => {
               <button
                 type="button"
                 className={styles.backBtn}
-                onClick={() => setSelectedId(null)}
+                onClick={() => navigateToComponent(null)}
               >
                 <ArrowBackIcon sx={{ fontSize: 16 }} />
                 <span>Back to components</span>
@@ -611,19 +668,28 @@ export const PlaygroundShell: React.FC = () => {
             <Box className={styles.showcaseContainer}>
               {/* Container Top Header */}
               <Box className={styles.showcaseTopBar}>
-                {/* Left: Preview vs Code Tab Segmented Switcher */}
+                {/* Left: Preview vs Props vs Code Tab Segmented Switcher */}
                 <Box className={styles.tabPillSegment}>
                   <button
                     type="button"
                     className={`${styles.showcaseTabBtn} ${showcaseTab === 'preview' ? styles.activeShowcaseTab : ''}`}
-                    onClick={() => setShowcaseTab('preview')}
+                    onClick={() => switchTab('preview')}
                   >
                     Preview
                   </button>
+                  {activeComponent.controls.length > 0 && (
+                    <button
+                      type="button"
+                      className={`${styles.showcaseTabBtn} ${showcaseTab === 'controls' ? styles.activeShowcaseTab : ''}`}
+                      onClick={() => switchTab('controls')}
+                    >
+                      Props &amp; Controls ({activeComponent.controls.length})
+                    </button>
+                  )}
                   <button
                     type="button"
                     className={`${styles.showcaseTabBtn} ${showcaseTab === 'code' ? styles.activeShowcaseTab : ''}`}
-                    onClick={() => setShowcaseTab('code')}
+                    onClick={() => switchTab('code')}
                   >
                     Code
                   </button>
@@ -668,30 +734,27 @@ export const PlaygroundShell: React.FC = () => {
               {/* Container Body */}
               <Box className={styles.showcaseBody}>
                 {showcaseTab === 'preview' ? (
-                  /* Preview Viewport + Right Controls Drawer */
-                  <>
-                    <Box className={styles.showcaseCanvasArea}>
-                      <Canvas bgMode={canvasBg} deviceMode={deviceMode}>
-                        {activeComponent.render(activeProps)}
-                      </Canvas>
-
-                      <CodeViewer
-                        usageCode={activeComponent.generateCode(activeProps)}
-                        sourceCode={activeComponent.sourceCode}
-                        scssCode={activeComponent.scssCode}
-                      />
-                    </Box>
-
-                    {activeComponent.controls.length > 0 && (
-                      <Box className={styles.showcaseControlsDrawer}>
-                        <ControlPanel
-                          controls={activeComponent.controls}
-                          values={activeProps}
-                          onChange={handlePropChange}
-                        />
-                      </Box>
-                    )}
-                  </>
+                  /* Full-width unconstrained Preview Canvas */
+                  <Box className={styles.showcaseCanvasArea}>
+                    <Canvas bgMode={canvasBg} deviceMode={deviceMode}>
+                      {activeComponent.render(activeProps)}
+                    </Canvas>
+                  </Box>
+                ) : showcaseTab === 'controls' ? (
+                  /* Dedicated Props & Controls Tab */
+                  <Box sx={{ flex: 1, p: { xs: 3, md: 5 }, maxWidth: 720, mx: 'auto', width: '100%', boxSizing: 'border-box' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5, color: 'text.primary' }}>
+                      Props Inspector &amp; Controls
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3.5 }}>
+                      Configure parameters and interactive props for <strong>{activeComponent.name}</strong>. Changes reflect immediately in the Preview tab.
+                    </Typography>
+                    <ControlPanel
+                      controls={activeComponent.controls}
+                      values={activeProps}
+                      onChange={handlePropChange}
+                    />
+                  </Box>
                 ) : (
                   /* Full Code Showcase View */
                   <Box sx={{ flex: 1, p: 3 }}>

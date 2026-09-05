@@ -2,12 +2,14 @@
 
 .canvasWrapper {
   flex: 1;
+  width: 100%;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   overflow: auto;
   position: relative;
-  padding: 40px;
+  padding: 16px;
+  box-sizing: border-box;
   transition: $transition-smooth;
 
   &.bgDark {
@@ -54,26 +56,24 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 240px;
-  padding: 48px;
+  min-height: 480px;
+  width: 100%;
+  padding: 0;
   border-radius: 16px;
   transition: $transition-smooth;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-
-  :global([data-theme='dark']) & {
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  }
 
   &.deviceDesktop {
     width: 100%;
-    max-width: 800px;
+    max-width: 100%;
   }
 
   &.deviceTablet {
-    width: 600px;
+    width: 768px;
+    max-width: 100%;
   }
 
   &.deviceMobile {
-    width: 360px;
+    width: 390px;
+    max-width: 100%;
   }
 }
