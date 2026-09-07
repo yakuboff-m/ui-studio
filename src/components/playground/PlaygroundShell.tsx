@@ -36,6 +36,7 @@ import {
   ExpandableTabs,
   MarketplaceDock,
   ResizableMarketplaceNav,
+  VerticalTooltipMenu,
 } from '@/components/ui';
 
 import {
@@ -59,6 +60,8 @@ import {
   FULL_CUSTOM_SWITCH_SCSS,
   FULL_GOOEY_INPUT_TSX,
   FULL_GOOEY_INPUT_SCSS,
+  FULL_VERTICAL_TOOLTIP_TSX,
+  FULL_VERTICAL_TOOLTIP_SCSS,
 } from './componentSources';
 
 import styles from './PlaygroundShell.module.scss';
@@ -207,6 +210,35 @@ const COMPONENT_REGISTRY: RegisteredComponent[] = [
       `<ExpandableTabs\n  items={items}\n  defaultValue="${props.defaultTab || 'home'}"\n/>`,
     sourceCode: FULL_EXPANDABLE_TABS_TSX,
     scssCode: FULL_EXPANDABLE_TABS_SCSS,
+  },
+  {
+    id: 'skiper98-vertical-tooltip',
+    name: 'Vertical Tooltip Menu',
+    category: 'Navigation',
+    description: 'Skiper UI 98 animated vertical tooltip menu with smooth clip-path spring reveals, keyboard shortcuts, and right-side tooltip positioning.',
+    controls: [
+      { name: 'side', type: 'select', defaultValue: 'right', options: ['right', 'left', 'top', 'bottom'] },
+      { name: 'defaultActiveId', type: 'select', defaultValue: 'menu', options: ['comment', 'share', 'menu'] },
+      { name: 'stiffness', type: 'number', defaultValue: 400 },
+      { name: 'damping', type: 'number', defaultValue: 30 },
+    ],
+    render: (props) => (
+      <Box sx={{ py: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: 300 }}>
+        <VerticalTooltipMenu
+          side={(props.side as any) || 'right'}
+          defaultActiveId={String(props.defaultActiveId || 'menu')}
+          springConfig={{
+            stiffness: Number(props.stiffness) || 400,
+            damping: Number(props.damping) || 30,
+            mass: 0.8,
+          }}
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `<VerticalTooltipMenu\n  side="${props.side || 'right'}"\n  defaultActiveId="${props.defaultActiveId || 'menu'}"\n  springConfig={{\n    stiffness: ${props.stiffness || 400},\n    damping: ${props.damping || 30},\n    mass: 0.8,\n  }}\n/>`,
+    sourceCode: FULL_VERTICAL_TOOLTIP_TSX,
+    scssCode: FULL_VERTICAL_TOOLTIP_SCSS,
   },
   {
     id: 'smooth-input',

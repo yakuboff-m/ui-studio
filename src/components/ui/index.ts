@@ -8,3 +8,4 @@ export * from './MarketplaceDock';
 export * from './SmoothInput';
 export * from './GooeyInput';
 export * from './ResizableMarketplaceNav';
+export * from './VerticalTooltipMenu';
