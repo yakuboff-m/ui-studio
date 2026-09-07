@@ -2297,6 +2297,7 @@ export const ResizableMarketplaceNav: React.FC<ResizableMarketplaceNavProps> = (
   const filterId = \`gooey-morph-\${uid}\`;
 
   const scrollRef   = useRef<HTMLDivElement>(null);
+  const topInputRef = useRef<HTMLInputElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
   const panelRef    = useRef<HTMLDivElement>(null);
 
@@ -2438,9 +2439,15 @@ export const ResizableMarketplaceNav: React.FC<ResizableMarketplaceNavProps> = (
               <motion.div key="search" className={styles.topSearchBar}
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.2 }}>
-                <Search size={17} className={styles.topSearchIcon} />
-                <input type="text" value={topSearchText} onChange={e => setTopSearchText(e.target.value)}
-                  placeholder={topPlaceholder} className={styles.topSearchInput} />
+                <Search size={17} className={styles.topSearchIcon} onClick={() => topInputRef.current?.focus()} />
+                <SmoothInput
+                  ref={topInputRef}
+                  value={topSearchText}
+                  onChange={e => setTopSearchText(e.target.value)}
+                  placeholder={topPlaceholder}
+                  className={styles.topSearchInput}
+                  isDockMode
+                />
                 <button type="button" className={styles.scanBtn} aria-label="Scan"><Scan size={16} /></button>
               </motion.div>
             ) : (
@@ -2732,8 +2739,9 @@ export const FULL_RESIZABLE_NAV_SCSS = `@use "../../../styles/variables.scss" as
   border-radius: 9999px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); gap: 8px;
   :global([data-theme='light']) & { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.08); }
   &:focus-within { border-color: #3b82f6; background: rgba(0,0,0,0.45); :global([data-theme='light']) & { background: #fff; } }
+  :global(.smoothCaret), [class*="smoothCaret"] { box-shadow: none !important; }
 }
-.topSearchIcon { color: #94a3b8; flex-shrink: 0; }
+.topSearchIcon { color: #94a3b8; flex-shrink: 0; cursor: pointer; }
 .topSearchInput { flex: 1; min-width: 0; background: transparent; border: none; outline: none; font-family: inherit; font-size: 0.85rem; color: inherit; &::placeholder { color: #64748b; font-size: 0.82rem; } }
 .scanBtn { display: flex; align-items: center; justify-content: center; background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 4px; border-radius: 6px; &:hover { color: #fff; } }
 .scrolledIndicator { display: flex; align-items: center; justify-content: center; }
@@ -2756,7 +2764,7 @@ export const FULL_RESIZABLE_NAV_SCSS = `@use "../../../styles/variables.scss" as
 
 .heroSection { text-align: center; max-width: 680px; margin: 16px auto 36px; display: flex; flex-direction: column; align-items: center; }
 .heroBadge { display: inline-flex; padding: 4px 12px; border-radius: 9999px; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); color: #60a5fa; font-size: 0.76rem; font-weight: 600; margin-bottom: 14px; }
-.heroTitle { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 10px; background: linear-gradient(135deg,#fff 40%,#94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; :global([data-theme='light']) & { background: linear-gradient(135deg,#0f172a 40%,#475569); -webkit-background-clip: text; -webkit-text-fill-color: transparent; } }
+.heroTitle { font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 10px; background: linear-gradient(135deg,#fff 40%,#94a3b8); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; :global([data-theme='light']) & { background: linear-gradient(135deg,#0f172a 40%,#475569); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; } }
 .heroSubtitle { font-size: 0.92rem; line-height: 1.6; color: #94a3b8; margin: 0 0 18px; :global([data-theme='light']) & { color: #475569; } }
 .scrollPill { display: inline-flex; align-items: center; padding: 7px 16px; border-radius: 9999px; background: rgba(255,255,255,0.06); border: 1px dashed rgba(255,255,255,0.18); font-size: 0.8rem; font-weight: 500; color: #94a3b8; cursor: pointer; &:hover { background: rgba(255,255,255,0.1); border-color: #3b82f6; } }
 
@@ -2818,15 +2826,14 @@ export const FULL_RESIZABLE_NAV_SCSS = `@use "../../../styles/variables.scss" as
   width: 100%;
   height: 100%;
   overflow: hidden;
-  /* Match MarketplaceDock .container surface EXACTLY */
-  background: #ffffff;
+  background: #eef1f6;
   color: #0f172a;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08), 0 16px 40px -10px rgba(0,0,0,0.12);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1), 0 16px 40px -10px rgba(0,0,0,0.1);
   transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
   :global([data-theme='dark']) & {
-    background: #1a1f2e;
+    background: #252d3f;
     color: #f1f5f9;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 20px 50px -12px rgba(0,0,0,0.7);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 20px 50px -12px rgba(0,0,0,0.6);
   }
 }
 
@@ -2851,15 +2858,14 @@ export const FULL_RESIZABLE_NAV_SCSS = `@use "../../../styles/variables.scss" as
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  /* Same surface as pill */
-  background: #ffffff;
+  background: #eef1f6;
   color: #0f172a;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08), 0 16px 40px -10px rgba(0,0,0,0.12);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1), 0 16px 40px -10px rgba(0,0,0,0.1);
   transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
   :global([data-theme='dark']) & {
-    background: #1a1f2e;
+    background: #252d3f;
     color: #f1f5f9;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1), 0 20px 50px -12px rgba(0,0,0,0.7);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12), 0 20px 50px -12px rgba(0,0,0,0.6);
   }
   &:hover { transform: scale(1.05); }
   &:active { transform: scale(0.95); }

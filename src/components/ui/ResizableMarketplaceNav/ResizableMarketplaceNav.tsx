@@ -102,6 +102,7 @@ export const ResizableMarketplaceNav: React.FC<ResizableMarketplaceNavProps> = (
   const filterId = `gooey-morph-${uid}`;
 
   const scrollRef   = useRef<HTMLDivElement>(null);
+  const topInputRef = useRef<HTMLInputElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
   const panelRef    = useRef<HTMLDivElement>(null);
 
@@ -243,9 +244,15 @@ export const ResizableMarketplaceNav: React.FC<ResizableMarketplaceNavProps> = (
               <motion.div key="search" className={styles.topSearchBar}
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.2 }}>
-                <Search size={17} className={styles.topSearchIcon} />
-                <input type="text" value={topSearchText} onChange={e => setTopSearchText(e.target.value)}
-                  placeholder={topPlaceholder} className={styles.topSearchInput} />
+                <Search size={17} className={styles.topSearchIcon} onClick={() => topInputRef.current?.focus()} />
+                <SmoothInput
+                  ref={topInputRef}
+                  value={topSearchText}
+                  onChange={e => setTopSearchText(e.target.value)}
+                  placeholder={topPlaceholder}
+                  className={styles.topSearchInput}
+                  isDockMode
+                />
                 <button type="button" className={styles.scanBtn} aria-label="Scan"><Scan size={16} /></button>
               </motion.div>
             ) : (
