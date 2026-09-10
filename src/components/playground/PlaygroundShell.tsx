@@ -37,6 +37,7 @@ import {
   MarketplaceDock,
   ResizableMarketplaceNav,
   VerticalTooltipMenu,
+  NotificationStack,
 } from '@/components/ui';
 
 import {
@@ -62,6 +63,8 @@ import {
   FULL_GOOEY_INPUT_SCSS,
   FULL_VERTICAL_TOOLTIP_TSX,
   FULL_VERTICAL_TOOLTIP_SCSS,
+  FULL_NOTIFICATION_STACK_TSX,
+  FULL_NOTIFICATION_STACK_SCSS,
 } from './componentSources';
 
 import styles from './PlaygroundShell.module.scss';
@@ -159,6 +162,40 @@ const SKIPER96_ITEMS = [
 ];
 
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'notification-stack',
+    name: 'Notification Stack',
+    category: 'Feedback',
+    description: '1:1 Motion UI List Notifications Stack. Expandable stacked cards with custom spring physics, layout animation, peek layers, and collapse header toggle.',
+    controls: [
+      { name: 'theme', type: 'select', defaultValue: 'auto', options: ['auto', 'dark', 'light'] },
+      { name: 'count', type: 'number', defaultValue: 3 },
+      { name: 'cardWidth', type: 'number', defaultValue: 350 },
+      { name: 'cardHeight', type: 'number', defaultValue: 84 },
+      { name: 'cardGap', type: 'number', defaultValue: 10 },
+      { name: 'scaleStep', type: 'number', defaultValue: 0.08 },
+      { name: 'dimStep', type: 'number', defaultValue: 0.4 },
+      { name: 'ambient', type: 'boolean', defaultValue: true },
+    ],
+    render: (props) => (
+      <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+        <NotificationStack
+          theme={props.theme as any}
+          count={Number(props.count) || 3}
+          cardWidth={Number(props.cardWidth) || 350}
+          cardHeight={Number(props.cardHeight) || 84}
+          cardGap={Number(props.cardGap) || 10}
+          scaleStep={Number(props.scaleStep) || 0.08}
+          dimStep={Number(props.dimStep) || 0.4}
+          ambient={Boolean(props.ambient)}
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `<NotificationStack\n  theme="${props.theme || 'light'}"\n  count={${props.count || 3}}\n  cardWidth={${props.cardWidth || 350}}\n  cardHeight={${props.cardHeight || 84}}\n  cardGap={${props.cardGap || 10}}\n  scaleStep={${props.scaleStep || 0.08}}\n  dimStep={${props.dimStep || 0.4}}\n  ambient={${props.ambient !== false}}\n/>`,
+    sourceCode: FULL_NOTIFICATION_STACK_TSX,
+    scssCode: FULL_NOTIFICATION_STACK_SCSS,
+  },
   {
     id: 'resizable-marketplace-nav',
     name: 'Resizable Navbar & Sticky Dock',
