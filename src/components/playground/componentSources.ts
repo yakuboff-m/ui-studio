@@ -4382,3 +4382,195 @@ export const FULL_NOTIFICATION_STACK_SCSS = `/* NotificationStack - 1:1 Motion U
   border: 0;
 }
 `;
+
+export const FULL_FLIP_WORDS_TSX = `'use client';
+
+import React, { useCallback, useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import styles from './FlipWords.module.scss';
+
+export interface FlipWordsProps {
+  /** Array of words or phrases to cycle through */
+  words: string[];
+  /** Duration in milliseconds that each word remains visible before flipping */
+  duration?: number;
+  /** Custom theme override: 'auto' | 'dark' | 'light' */
+  theme?: 'auto' | 'dark' | 'light';
+  /** Additional CSS class names */
+  className?: string;
+  /** Inline style overrides */
+  style?: React.CSSProperties;
+}
+
+export const FlipWords: React.FC<FlipWordsProps> = ({
+  words,
+  duration = 2500,
+  theme = 'auto',
+  className = '',
+  style,
+}) => {
+  const [currentWord, setCurrentWord] = useState<string>(words[0] || '');
+  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+
+  // Cycle to next word safely
+  const startAnimation = useCallback(() => {
+    if (!words || words.length === 0) return;
+    const currentIndex = words.indexOf(currentWord);
+    const nextIndex = (currentIndex + 1) % words.length;
+    const nextWord = words[nextIndex] ?? words[0];
+    setCurrentWord(nextWord);
+    setIsAnimating(true);
+  }, [currentWord, words]);
+
+  useEffect(() => {
+    if (!isAnimating && words.length > 1) {
+      const timer = setTimeout(() => {
+        startAnimation();
+      }, duration);
+      return () => clearTimeout(timer);
+    }
+  }, [isAnimating, duration, startAnimation, words.length]);
+
+  // Sync if words array changes externally
+  useEffect(() => {
+    if (words && words.length > 0 && !words.includes(currentWord)) {
+      setCurrentWord(words[0]);
+    }
+  }, [words, currentWord]);
+
+  const dataThemeAttr = theme === 'auto' ? undefined : theme;
+
+  return (
+    <AnimatePresence
+      onExitComplete={() => {
+        setIsAnimating(false);
+      }}
+    >
+      <motion.span
+        key={currentWord}
+        initial={{
+          opacity: 0,
+          y: 10,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
+        transition={{
+          type: 'spring',
+          stiffness: 120,
+          damping: 12,
+        }}
+        exit={{
+          opacity: 0,
+          y: -24,
+          x: 20,
+          filter: 'blur(6px)',
+          scale: 1.1,
+          position: 'absolute',
+          transition: {
+            duration: 0.28,
+            ease: 'easeInOut',
+          },
+        }}
+        className={\`\${styles.flipWords} \${className}\`}
+        data-theme={dataThemeAttr}
+        style={style}
+      >
+        {currentWord.split(' ').map((word, wordIndex) => (
+          <motion.span
+            key={word + wordIndex}
+            initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{
+              delay: wordIndex * 0.15,
+              duration: 0.25,
+            }}
+            className={styles.wordSpan}
+          >
+            {word.split('').map((letter, letterIndex) => (
+              <motion.span
+                key={word + letterIndex}
+                initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
+                animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                transition={{
+                  delay: wordIndex * 0.15 + letterIndex * 0.035,
+                  duration: 0.2,
+                }}
+                className={styles.letterSpan}
+              >
+                {letter}
+              </motion.span>
+            ))}
+            <span className={styles.spaceSpan}>&nbsp;</span>
+          </motion.span>
+        ))}
+      </motion.span>
+    </AnimatePresence>
+  );
+};
+`;
+
+export const FULL_FLIP_WORDS_SCSS = `/* FlipWords - 1:1 Aceternity UI Text Flipping Animation */
+
+.flipWords {
+  --fw-text-color: #09090b;
+  
+  display: inline-block;
+  position: relative;
+  text-align: left;
+  padding: 0 0.25em;
+  color: var(--fw-text-color);
+  font-weight: 600;
+  vertical-align: baseline;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+:global([data-theme='dark']) .flipWords,
+.flipWords[data-theme='dark'] {
+  --fw-text-color: #fafafa;
+}
+
+.wordSpan {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.letterSpan {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+}
+
+.spaceSpan {
+  display: inline-block;
+}
+
+/* ── Aceternity Demo Layout Styles ── */
+.demoContainer {
+  --demo-lead: #52525b;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  padding: 48px 16px;
+  box-sizing: border-box;
+}
+
+:global([data-theme='dark']) .demoContainer {
+  --demo-lead: #a1a1aa;
+}
+
+.demoHeading {
+  margin: 0;
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+  color: var(--demo-lead);
+  max-width: 800px;
+}
+`;

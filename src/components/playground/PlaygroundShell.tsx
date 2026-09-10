@@ -38,6 +38,7 @@ import {
   ResizableMarketplaceNav,
   VerticalTooltipMenu,
   NotificationStack,
+  FlipWords,
 } from '@/components/ui';
 
 import {
@@ -65,6 +66,8 @@ import {
   FULL_VERTICAL_TOOLTIP_SCSS,
   FULL_NOTIFICATION_STACK_TSX,
   FULL_NOTIFICATION_STACK_SCSS,
+  FULL_FLIP_WORDS_TSX,
+  FULL_FLIP_WORDS_SCSS,
 } from './componentSources';
 
 import styles from './PlaygroundShell.module.scss';
@@ -162,6 +165,76 @@ const SKIPER96_ITEMS = [
 ];
 
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'flip-words',
+    name: 'Flip Words',
+    category: 'Text Animations',
+    description: '1:1 Aceternity UI Flip Words text animation. Transitions smoothly through a list of words with letter-by-letter blur and spring physics.',
+    controls: [
+      { name: 'words', type: 'text', defaultValue: 'better, cute, beautiful, modern' },
+      { name: 'duration', type: 'number', defaultValue: 2500 },
+      { name: 'prefix', type: 'text', defaultValue: 'Build' },
+      { name: 'suffix', type: 'text', defaultValue: 'websites with Aceternity UI' },
+      { name: 'theme', type: 'select', defaultValue: 'auto', options: ['auto', 'dark', 'light'] },
+    ],
+    render: (props) => {
+      const wordsList = String(props.words || 'better, cute, beautiful, modern')
+        .split(',')
+        .map((w) => w.trim())
+        .filter(Boolean);
+
+      return (
+        <Box
+          sx={{
+            width: '100%',
+            minHeight: 340,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            px: { xs: 2, sm: 4 },
+            py: 6,
+            textAlign: 'center',
+          }}
+        >
+          <Typography
+            component="div"
+            sx={{
+              fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' },
+              fontWeight: 400,
+              lineHeight: 1.35,
+              letterSpacing: '-0.025em',
+              color: 'text.secondary',
+              maxWidth: 780,
+              mx: 'auto',
+            }}
+          >
+            {props.prefix ? `${props.prefix} ` : ''}
+            <FlipWords
+              words={wordsList.length > 0 ? wordsList : ['better', 'cute', 'beautiful', 'modern']}
+              duration={Number(props.duration) || 2500}
+              theme={props.theme as any}
+            />
+            {props.suffix ? (
+              <>
+                <br />
+                {props.suffix}
+              </>
+            ) : null}
+          </Typography>
+        </Box>
+      );
+    },
+    generateCode: (props) => {
+      const wordsList = String(props.words || 'better, cute, beautiful, modern')
+        .split(',')
+        .map((w) => w.trim())
+        .filter(Boolean);
+      const wordsArrStr = JSON.stringify(wordsList.length ? wordsList : ['better', 'cute', 'beautiful', 'modern']);
+      return `import React from 'react';\nimport { FlipWords } from '@/components/ui/FlipWords';\n\nexport function FlipWordsDemo() {\n  const words = ${wordsArrStr};\n\n  return (\n    <div className="flex justify-center items-center px-4 py-16">\n      <div className="text-4xl font-normal text-neutral-600 dark:text-neutral-400 text-center">\n        ${props.prefix || 'Build'}{' '}\n        <FlipWords words={words} duration={${props.duration || 2500}} /> <br />\n        ${props.suffix || 'websites with Aceternity UI'}\n      </div>\n    </div>\n  );\n}`;
+    },
+    sourceCode: FULL_FLIP_WORDS_TSX,
+    scssCode: FULL_FLIP_WORDS_SCSS,
+  },
   {
     id: 'notification-stack',
     name: 'Notification Stack',

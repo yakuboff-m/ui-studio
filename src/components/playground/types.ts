@@ -13,7 +13,7 @@ export interface PropControlConfig {
 export interface RegisteredComponent {
   id: string;
   name: string;
-  category: 'Actions' | 'Layout' | 'Inputs' | 'Data Display' | 'Feedback' | 'Navigation';
+  category: 'Actions' | 'Layout' | 'Inputs' | 'Data Display' | 'Feedback' | 'Navigation' | 'Text Animations';
   description: string;
   controls: PropControlConfig[];
   render: (props: Record<string, PropControlValue>) => React.ReactNode;
