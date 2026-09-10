@@ -11,3 +11,4 @@ export * from './ResizableMarketplaceNav';
 export * from './VerticalTooltipMenu';
 export * from './NotificationStack';
 export * from './FlipWords';
+export * from './Sidebar';

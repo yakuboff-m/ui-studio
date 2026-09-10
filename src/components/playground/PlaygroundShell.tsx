@@ -15,6 +15,8 @@ import LaunchIcon from '@mui/icons-material/Launch';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 
 import { Home, Bell, SlidersHorizontal, Bookmark, Shield, Volume2 } from 'lucide-react';
 import { Slider, Switch as MuiSwitchControl } from '@mui/material';
@@ -39,6 +41,7 @@ import {
   VerticalTooltipMenu,
   NotificationStack,
   FlipWords,
+  SimpleSidebar,
 } from '@/components/ui';
 
 import {
@@ -68,6 +71,8 @@ import {
   FULL_NOTIFICATION_STACK_SCSS,
   FULL_FLIP_WORDS_TSX,
   FULL_FLIP_WORDS_SCSS,
+  FULL_SIDEBAR_TSX,
+  FULL_SIDEBAR_SCSS,
 } from './componentSources';
 
 import styles from './PlaygroundShell.module.scss';
@@ -165,6 +170,38 @@ const SKIPER96_ITEMS = [
 ];
 
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'simple-sidebar',
+    name: 'Simple Sidebar',
+    category: 'Layout',
+    description: '1:1 Aceternity UI Simple Sidebar with floating hover pill highlight, mobile drawer, user profile, and responsive dashboard layout.',
+    controls: [
+      { name: 'collapsible', type: 'boolean', defaultValue: false, description: 'Toggle collapsible 68px/280px mode with expand button' },
+      { name: 'logoTitle', type: 'text', defaultValue: 'Acet Labs' },
+      { name: 'userName', type: 'text', defaultValue: 'Manu Arora' },
+      { name: 'userRole', type: 'text', defaultValue: 'manu@aceternity.com' },
+      { name: 'theme', type: 'select', defaultValue: 'auto', options: ['auto', 'dark', 'light'] },
+    ],
+    render: (props) => {
+      return (
+        <Box sx={{ width: '100%', height: { xs: 560, md: 680 }, overflow: 'hidden', borderRadius: '12px' }}>
+          <SimpleSidebar
+            collapsible={Boolean(props.collapsible)}
+            logoTitle={String(props.logoTitle || 'Acet Labs')}
+            userName={String(props.userName || 'Manu Arora')}
+            userRole={String(props.userRole || 'manu@aceternity.com')}
+            theme={props.theme as any}
+            style={{ width: '100%', height: '100%' }}
+          />
+        </Box>
+      );
+    },
+    generateCode: (props) => {
+      return `import React from 'react';\nimport { SimpleSidebar } from '@/components/ui/Sidebar';\n\nexport function SimpleSidebarDemo() {\n  return (\n    <div className="h-screen w-full">\n      <SimpleSidebar\n        collapsible={${Boolean(props.collapsible)}}\n        logoTitle="${props.logoTitle || 'Acet Labs'}"\n        userName="${props.userName || 'Manu Arora'}"\n        userRole="${props.userRole || 'manu@aceternity.com'}"\n      />\n    </div>\n  );\n}`;
+    },
+    sourceCode: FULL_SIDEBAR_TSX,
+    scssCode: FULL_SIDEBAR_SCSS,
+  },
   {
     id: 'flip-words',
     name: 'Flip Words',
@@ -546,11 +583,23 @@ export const PlaygroundShell: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(urlComponentId);
   const [showcaseTab, setShowcaseTab] = useState<'preview' | 'controls' | 'code'>(urlTab);
   const [deviceMode, setDeviceMode] = useState<CanvasDeviceMode>('desktop');
+  const [isFullscreenPreview, setIsFullscreenPreview] = useState<boolean>(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   const canvasBg = mode === 'dark' ? 'mesh' : 'light';
+
+  // Listen for Escape key to exit full window preview
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsFullscreenPreview(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Synchronize state when URL changes (e.g. browser Back / Forward / Refresh)
   useEffect(() => {
@@ -866,6 +915,16 @@ export const PlaygroundShell: React.FC = () => {
                           <SmartphoneIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
+
+                      <Tooltip title="Full Window Preview">
+                        <IconButton
+                          size="small"
+                          onClick={() => setIsFullscreenPreview(true)}
+                          sx={{ color: 'text.secondary', ml: 0.5 }}
+                        >
+                          <OpenInFullIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
                   )}
                 </Box>
@@ -910,6 +969,89 @@ export const PlaygroundShell: React.FC = () => {
           </Box>
         )}
       </Box>
+
+      {/* ─── Full Window Preview Overlay ─── */}
+      {isFullscreenPreview && activeComponent && (
+        <Box className={styles.fullWindowOverlay}>
+          {/* Floating Glass Navigation Bar */}
+          <Box className={styles.fullWindowFloatingBar}>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 700, color: 'text.primary', mr: 1, display: { xs: 'none', sm: 'block' } }}
+            >
+              {activeComponent.name}
+            </Typography>
+
+            {/* Device Switcher */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Tooltip title="Desktop (100%)">
+                <IconButton
+                  size="small"
+                  onClick={() => setDeviceMode('desktop')}
+                  sx={{ color: deviceMode === 'desktop' ? '#6366f1' : 'text.secondary' }}
+                >
+                  <DesktopWindowsIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Tablet (768px)">
+                <IconButton
+                  size="small"
+                  onClick={() => setDeviceMode('tablet')}
+                  sx={{ color: deviceMode === 'tablet' ? '#6366f1' : 'text.secondary' }}
+                >
+                  <TabletIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Mobile (375px)">
+                <IconButton
+                  size="small"
+                  onClick={() => setDeviceMode('mobile')}
+                  sx={{ color: deviceMode === 'mobile' ? '#6366f1' : 'text.secondary' }}
+                >
+                  <SmartphoneIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Box>
+
+            {/* Theme Toggle */}
+            <Tooltip title={mode === 'dark' ? 'Light Mode' : 'Dark Mode'}>
+              <IconButton size="small" onClick={toggleTheme} sx={{ color: 'text.secondary' }}>
+                {mode === 'dark' ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+
+            {/* Exit Fullscreen Button */}
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={<FullscreenExitIcon fontSize="small" />}
+              onClick={() => setIsFullscreenPreview(false)}
+              sx={{
+                borderRadius: 9999,
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.78rem',
+                py: 0.5,
+                px: 1.5,
+                background: mode === 'dark' ? '#ffffff' : '#0f172a',
+                color: mode === 'dark' ? '#090d16' : '#ffffff',
+                '&:hover': {
+                  background: mode === 'dark' ? '#e2e8f0' : '#1e293b',
+                },
+              }}
+            >
+              Exit (Esc)
+            </Button>
+          </Box>
+
+          {/* Full Window Unconstrained Component Render */}
+          <Box className={styles.fullWindowContent}>
+            <Canvas bgMode={canvasBg} deviceMode={deviceMode}>
+              {activeComponent.render(activeProps)}
+            </Canvas>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };

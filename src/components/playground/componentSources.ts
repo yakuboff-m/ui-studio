@@ -4574,3 +4574,945 @@ export const FULL_FLIP_WORDS_SCSS = `/* FlipWords - 1:1 Aceternity UI Text Flipp
   max-width: 800px;
 }
 `;
+
+export const FULL_SIDEBAR_TSX = `'use client';
+
+import React, { createContext, useContext, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  LayoutDashboard,
+  UserCheck,
+  CreditCard,
+  ShoppingBag,
+  BookOpen,
+  Terminal,
+  LifeBuoy,
+  HeartHandshake,
+  Menu,
+  X,
+  ChevronLeft,
+} from 'lucide-react';
+import styles from './Sidebar.module.scss';
+
+/* ─── Context & Types ─── */
+export interface SidebarContextType {
+  open: boolean;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  animate: boolean;
+  collapsible: boolean;
+}
+
+const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
+
+export const useSidebar = () => {
+  const context = useContext(SidebarContext);
+  if (!context) {
+    throw new Error('useSidebar must be used within a SidebarProvider');
+  }
+  return context;
+};
+
+export interface SidebarProviderProps {
+  children: React.ReactNode;
+  open?: boolean;
+  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  animate?: boolean;
+  collapsible?: boolean;
+}
+
+export const SidebarProvider: React.FC<SidebarProviderProps> = ({
+  children,
+  open: openProp,
+  setOpen: setOpenProp,
+  animate = true,
+  collapsible = false,
+}) => {
+  const [openState, setOpenState] = useState<boolean>(!collapsible);
+  const open = openProp !== undefined ? openProp : openState;
+  const setOpen = setOpenProp !== undefined ? setOpenProp : setOpenState;
+
+  return (
+    <SidebarContext.Provider value={{ open, setOpen, animate, collapsible }}>
+      {children}
+    </SidebarContext.Provider>
+  );
+};
+
+/* ─── Sidebar Root Container ─── */
+export interface SidebarProps {
+  children: React.ReactNode;
+  open?: boolean;
+  setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  animate?: boolean;
+  collapsible?: boolean;
+  className?: string;
+  theme?: 'auto' | 'dark' | 'light';
+  style?: React.CSSProperties;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  children,
+  open,
+  setOpen,
+  animate = true,
+  collapsible = false,
+}) => {
+  return (
+    <SidebarProvider open={open} setOpen={setOpen} animate={animate} collapsible={collapsible}>
+      {children}
+    </SidebarProvider>
+  );
+};
+
+/* ─── Sidebar Body (Desktop + Mobile) ─── */
+export interface SidebarBodyProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const SidebarBody: React.FC<SidebarBodyProps> = ({ children, className = '', ...props }) => {
+  return (
+    <>
+      <DesktopSidebar className={className} {...props}>
+        {children}
+      </DesktopSidebar>
+      <MobileSidebar className={className} {...props}>
+        {children}
+      </MobileSidebar>
+    </>
+  );
+};
+
+/* ─── Desktop Sidebar ─── */
+export interface DesktopSidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
+  className = '',
+  children,
+  ...props
+}) => {
+  const { open, setOpen, animate, collapsible } = useSidebar();
+
+  const sidebarWidth = collapsible ? (open ? 280 : 68) : 280;
+
+  return (
+    <motion.aside
+      className={\`\${styles.desktopSidebar} \${className}\`}
+      animate={animate ? { width: sidebarWidth } : undefined}
+      transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+      {...(props as any)}
+    >
+      {collapsible && (
+        <button
+          type="button"
+          aria-label={open ? 'Collapse sidebar' : 'Expand sidebar'}
+          className={styles.collapseToggleBtn}
+          onClick={() => setOpen((prev) => !prev)}
+        >
+          <motion.div
+            animate={{ rotate: open ? 0 : 180 }}
+            transition={{ duration: 0.2 }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <ChevronLeft size={14} />
+          </motion.div>
+        </button>
+      )}
+      {children}
+    </motion.aside>
+  );
+};
+
+/* ─── Mobile Sidebar ─── */
+export interface MobileSidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const MobileSidebar: React.FC<MobileSidebarProps> = ({
+  className = '',
+  children,
+  ...props
+}) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      <header className={styles.mobileBar} {...props}>
+        <div className={styles.logo}>
+          <div className={styles.logoMark} />
+          <span className={styles.logoText}>Acet Labs</span>
+        </div>
+        <button
+          type="button"
+          aria-label="Open mobile menu"
+          className={styles.mobileMenuBtn}
+          onClick={() => setMobileOpen(true)}
+        >
+          <Menu size={20} />
+        </button>
+      </header>
+
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ x: '-100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '-100%', opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+            className={\`\${styles.mobileDrawer} \${className}\`}
+          >
+            <button
+              type="button"
+              aria-label="Close mobile menu"
+              className={styles.mobileCloseBtn}
+              onClick={() => setMobileOpen(false)}
+            >
+              <X size={20} />
+            </button>
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+/* ─── Sidebar Link with Floating Hover Pill ─── */
+export interface SidebarLinkItem {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+}
+
+export interface SidebarLinkProps {
+  link: SidebarLinkItem;
+  id?: string;
+  activeId?: string | null;
+  onHover?: (id: string | null) => void;
+  className?: string;
+}
+
+export const SidebarLink: React.FC<SidebarLinkProps> = ({
+  link,
+  id,
+  activeId,
+  onHover,
+  className = '',
+}) => {
+  const { open } = useSidebar();
+  const [isLocalHovered, setIsLocalHovered] = useState(false);
+
+  const isHighlighted = activeId !== undefined ? activeId === id : isLocalHovered;
+
+  return (
+    <a
+      href={link.href}
+      className={\`\${styles.sidebarLink} \${className}\`}
+      onMouseEnter={() => {
+        setIsLocalHovered(true);
+        if (id && onHover) onHover(id);
+      }}
+      onMouseLeave={() => {
+        setIsLocalHovered(false);
+        if (onHover) onHover(null);
+      }}
+    >
+      {isHighlighted && (
+        <motion.div
+          layoutId="hovered-sidebar-link"
+          className={styles.hoverPill}
+          transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+        />
+      )}
+      <div className={styles.linkContent}>
+        <span className={styles.linkIcon}>{link.icon}</span>
+        <motion.span
+          animate={{
+            opacity: open ? 1 : 0,
+            display: open ? 'inline-block' : 'none',
+          }}
+          transition={{ duration: 0.15 }}
+          className={styles.linkLabel}
+        >
+          {link.label}
+        </motion.span>
+      </div>
+    </a>
+  );
+};
+
+/* ─── Logo Component ─── */
+export interface SidebarLogoProps {
+  title?: string;
+  href?: string;
+  className?: string;
+}
+
+export const SidebarLogo: React.FC<SidebarLogoProps> = ({
+  title = 'Acet Labs',
+  href = '#',
+  className = '',
+}) => {
+  const { open } = useSidebar();
+
+  return (
+    <a href={href} className={\`\${styles.logo} \${className}\`}>
+      <div className={styles.logoMark} />
+      <motion.span
+        animate={{
+          opacity: open ? 1 : 0,
+          display: open ? 'inline-block' : 'none',
+        }}
+        transition={{ duration: 0.15 }}
+        className={styles.logoText}
+      >
+        {title}
+      </motion.span>
+    </a>
+  );
+};
+
+/* ─── User Profile Component ─── */
+export interface SidebarUserProfileProps {
+  name?: string;
+  subtitle?: string;
+  avatarUrl?: string;
+  href?: string;
+  className?: string;
+}
+
+export const SidebarUserProfile: React.FC<SidebarUserProfileProps> = ({
+  name = 'Manu Arora',
+  subtitle = 'Founder & Developer',
+  avatarUrl = 'https://assets.aceternity.com/manu.png',
+  href = '#',
+  className = '',
+}) => {
+  const { open } = useSidebar();
+
+  return (
+    <div className={\`\${styles.profileSection} \${className}\`}>
+      <a href={href} className={styles.profileCard}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={avatarUrl} alt={name} className={styles.avatar} />
+        <motion.div
+          animate={{
+            opacity: open ? 1 : 0,
+            display: open ? 'flex' : 'none',
+          }}
+          transition={{ duration: 0.15 }}
+          className={styles.profileInfo}
+        >
+          <span className={styles.profileName}>{name}</span>
+          {subtitle && <span className={styles.profileSubtitle}>{subtitle}</span>}
+        </motion.div>
+      </a>
+    </div>
+  );
+};
+
+/* ─── Mock Dashboard Component ─── */
+export const SidebarMockDashboard: React.FC = () => {
+  return (
+    <div className={styles.dashboardArea}>
+      <div className={styles.dashboardCard}>
+        {/* 4 Metrics pulse cards */}
+        <div className={styles.skeletonTopGrid}>
+          {[...Array(4)].map((_, i) => (
+            <div key={\`metric-\${i}\`} className={styles.skeletonCard} />
+          ))}
+        </div>
+        {/* 2 Main content pulse cards */}
+        <div className={styles.skeletonMainGrid}>
+          {[...Array(2)].map((_, i) => (
+            <div key={\`main-\${i}\`} className={styles.skeletonMain} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Complete 1:1 Simple Sidebar Block / Demo ─── */
+export interface SimpleSidebarProps {
+  collapsible?: boolean;
+  theme?: 'auto' | 'dark' | 'light';
+  logoTitle?: string;
+  userName?: string;
+  userRole?: string;
+  avatarUrl?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export const SimpleSidebar: React.FC<SimpleSidebarProps> = ({
+  collapsible = false,
+  theme = 'auto',
+  logoTitle = 'Acet Labs',
+  userName = 'Manu Arora',
+  userRole = 'manu@aceternity.com',
+  avatarUrl = 'https://assets.aceternity.com/manu.png',
+  className = '',
+  style,
+}) => {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  const primaryLinks: SidebarLinkItem[] = [
+    { label: 'Dashboard', href: '#', icon: <LayoutDashboard size={18} /> },
+    { label: 'Profile', href: '#', icon: <UserCheck size={18} /> },
+    { label: 'Billing', href: '#', icon: <CreditCard size={18} /> },
+    { label: 'Orders', href: '#', icon: <ShoppingBag size={18} /> },
+  ];
+
+  const secondaryLinks: SidebarLinkItem[] = [
+    { label: 'Documentation', href: '#', icon: <BookOpen size={18} /> },
+    { label: 'API Reference', href: '#', icon: <Terminal size={18} /> },
+    { label: 'Support', href: '#', icon: <LifeBuoy size={18} /> },
+    { label: 'Sponsor', href: '#', icon: <HeartHandshake size={18} /> },
+  ];
+
+  const dataThemeAttr = theme === 'auto' ? undefined : theme;
+
+  return (
+    <div
+      className={\`\${styles.sidebarLayout} \${className}\`}
+      data-theme={dataThemeAttr}
+      style={style}
+    >
+      <Sidebar collapsible={collapsible}>
+        <SidebarBody>
+          <div>
+            <SidebarLogo title={logoTitle} />
+
+            <nav className={styles.linksContainer}>
+              {primaryLinks.map((link, idx) => (
+                <SidebarLink
+                  key={link.label}
+                  id={\`pri-\${idx}\`}
+                  link={link}
+                  activeId={hoveredId}
+                  onHover={setHoveredId}
+                />
+              ))}
+            </nav>
+
+            <div className={styles.divider} />
+
+            <nav className={styles.linksContainer}>
+              {secondaryLinks.map((link, idx) => (
+                <SidebarLink
+                  key={link.label}
+                  id={\`sec-\${idx}\`}
+                  link={link}
+                  activeId={hoveredId}
+                  onHover={setHoveredId}
+                />
+              ))}
+            </nav>
+          </div>
+
+          <SidebarUserProfile
+            name={userName}
+            subtitle={userRole}
+            avatarUrl={avatarUrl}
+          />
+        </SidebarBody>
+      </Sidebar>
+
+      {/* Main Dashboard Canvas */}
+      <SidebarMockDashboard />
+    </div>
+  );
+};
+`;
+
+export const FULL_SIDEBAR_SCSS = `/* Sidebar - 1:1 Aceternity UI Simple Sidebar with Hover Highlight */
+
+.sidebarLayout {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: #f3f4f6;
+  color: #111827;
+  box-sizing: border-box;
+  position: relative;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+  }
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    background-color: #18181b;
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #f4f4f5;
+  }
+}
+
+.desktopSidebar {
+  display: none;
+  height: 100%;
+  flex-shrink: 0;
+  background-color: #ffffff;
+  padding: 16px 12px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 20;
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  flex-direction: column;
+  justify-content: space-between;
+
+  @media (min-width: 768px) {
+    display: flex;
+  }
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    background-color: #09090b;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.collapseToggleBtn {
+  position: absolute;
+  top: 18px;
+  right: -10px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #ffffff;
+  color: #52525b;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #09090b;
+    background: #f4f4f5;
+  }
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    background: #18181b;
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #a1a1aa;
+
+    &:hover {
+      color: #fafafa;
+      background: #27272a;
+    }
+  }
+}
+
+.mobileBar {
+  display: flex;
+  height: 52px;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 0 16px;
+  box-sizing: border-box;
+  z-index: 30;
+
+  @media (min-width: 768px) {
+    display: none;
+  }
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    background-color: #09090b;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.mobileMenuBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #3f3f46;
+  padding: 6px;
+  border-radius: 6px;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    color: #d4d4d8;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+}
+
+.mobileDrawer {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: #ffffff;
+  padding: 24px;
+  box-sizing: border-box;
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    background-color: #09090b;
+  }
+}
+
+.mobileCloseBtn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 50;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #71717a;
+  padding: 6px;
+  border-radius: 6px;
+
+  &:hover {
+    color: #09090b;
+    background: rgba(0, 0, 0, 0.05);
+  }
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    color: #a1a1aa;
+
+    &:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+}
+
+.logo {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  text-decoration: none;
+  color: #09090b;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.015em;
+  border-radius: 8px;
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    color: #fafafa;
+  }
+}
+
+.logoMark {
+  width: 22px;
+  height: 22px;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 8px;
+  border-bottom-left-radius: 2px;
+  background-color: #09090b;
+  flex-shrink: 0;
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    background-color: #ffffff;
+  }
+}
+
+.logoText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.linksContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 20px;
+}
+
+.sidebarLink {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  color: #52525b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.15s ease;
+  user-select: none;
+
+  &:hover {
+    color: #09090b;
+
+    .linkLabel {
+      transform: translateX(4px);
+      color: #09090b;
+    }
+  }
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    color: #a1a1aa;
+
+    &:hover {
+      color: #ffffff;
+
+      .linkLabel {
+        color: #ffffff;
+      }
+    }
+  }
+}
+
+.hoverPill {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.06);
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.linkContent {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.linkIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.linkLabel {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+}
+
+.divider {
+  height: 1px;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.07);
+  margin: 14px 0;
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.profileSection {
+  margin-top: auto;
+  padding-top: 12px;
+}
+
+.profileCard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #18181b;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+  }
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    color: #f4f4f5;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.06);
+    }
+  }
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.profileName {
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profileSubtitle {
+  font-size: 0.72rem;
+  color: #71717a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    color: #a1a1aa;
+  }
+}
+
+.dashboardArea {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.dashboardCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: #ffffff;
+  padding: 16px;
+  box-sizing: border-box;
+
+  @media (min-width: 768px) {
+    padding: 24px;
+    border-top-left-radius: 20px;
+  }
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    background-color: #09090b;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.skeletonTopGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.skeletonCard {
+  height: 80px;
+  width: 100%;
+  border-radius: 10px;
+  background-color: #f4f4f5;
+  animation: pulseCard 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    background-color: #18181b;
+  }
+}
+
+.skeletonMainGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  width: 100%;
+  flex: 1;
+  min-height: 220px;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.skeletonMain {
+  height: 100%;
+  min-height: 220px;
+  width: 100%;
+  border-radius: 12px;
+  background-color: #f4f4f5;
+  animation: pulseCard 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  :global([data-theme='dark']) &,
+  &[data-theme='dark'] {
+    background-color: #18181b;
+  }
+}
+
+@keyframes pulseCard {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+`;
+
