@@ -224,7 +224,7 @@ export const NotificationStack: React.FC<NotificationStackProps> = ({
   onOpenChange,
   title = 'Notifications',
   collapseLabel = 'Collapse',
-  ambient = true,
+  ambient = false,
   className = '',
   style,
 }) => {

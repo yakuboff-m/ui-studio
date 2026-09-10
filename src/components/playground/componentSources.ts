@@ -3904,7 +3904,7 @@ export const NotificationStack: React.FC<NotificationStackProps> = ({
   onOpenChange,
   title = 'Notifications',
   collapseLabel = 'Collapse',
-  ambient = true,
+  ambient = false,
   className = '',
   style,
 }) => {
@@ -4317,6 +4317,7 @@ export const FULL_NOTIFICATION_STACK_SCSS = `/* NotificationStack - 1:1 Motion U
   color: var(--ns-body-color);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   transition: color 0.2s ease;

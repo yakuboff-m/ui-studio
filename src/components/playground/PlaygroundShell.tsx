@@ -175,7 +175,6 @@ const COMPONENT_REGISTRY: RegisteredComponent[] = [
       { name: 'cardGap', type: 'number', defaultValue: 10 },
       { name: 'scaleStep', type: 'number', defaultValue: 0.08 },
       { name: 'dimStep', type: 'number', defaultValue: 0.4 },
-      { name: 'ambient', type: 'boolean', defaultValue: true },
     ],
     render: (props) => (
       <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
@@ -187,12 +186,11 @@ const COMPONENT_REGISTRY: RegisteredComponent[] = [
           cardGap={Number(props.cardGap) || 10}
           scaleStep={Number(props.scaleStep) || 0.08}
           dimStep={Number(props.dimStep) || 0.4}
-          ambient={Boolean(props.ambient)}
         />
       </Box>
     ),
     generateCode: (props) =>
-      `<NotificationStack\n  theme="${props.theme || 'light'}"\n  count={${props.count || 3}}\n  cardWidth={${props.cardWidth || 350}}\n  cardHeight={${props.cardHeight || 84}}\n  cardGap={${props.cardGap || 10}}\n  scaleStep={${props.scaleStep || 0.08}}\n  dimStep={${props.dimStep || 0.4}}\n  ambient={${props.ambient !== false}}\n/>`,
+      `<NotificationStack\n  theme="${props.theme || 'auto'}"\n  count={${props.count || 3}}\n  cardWidth={${props.cardWidth || 350}}\n  cardHeight={${props.cardHeight || 84}}\n  cardGap={${props.cardGap || 10}}\n  scaleStep={${props.scaleStep || 0.08}}\n  dimStep={${props.dimStep || 0.4}}\n/>`,
     sourceCode: FULL_NOTIFICATION_STACK_TSX,
     scssCode: FULL_NOTIFICATION_STACK_SCSS,
   },
