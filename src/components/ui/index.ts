@@ -12,3 +12,4 @@ export * from './VerticalTooltipMenu';
 export * from './NotificationStack';
 export * from './FlipWords';
 export * from './Sidebar';
+export * from './FAQ';

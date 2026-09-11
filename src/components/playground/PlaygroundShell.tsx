@@ -42,6 +42,7 @@ import {
   NotificationStack,
   FlipWords,
   SimpleSidebar,
+  FAQ,
 } from '@/components/ui';
 
 import {
@@ -73,6 +74,8 @@ import {
   FULL_FLIP_WORDS_SCSS,
   FULL_SIDEBAR_TSX,
   FULL_SIDEBAR_SCSS,
+  FULL_FAQ_TSX,
+  FULL_FAQ_SCSS,
 } from './componentSources';
 
 import styles from './PlaygroundShell.module.scss';
@@ -201,6 +204,31 @@ const COMPONENT_REGISTRY: RegisteredComponent[] = [
     },
     sourceCode: FULL_SIDEBAR_TSX,
     scssCode: FULL_SIDEBAR_SCSS,
+  },
+  {
+    id: 'faq',
+    name: 'FAQ Accordion',
+    category: 'Layout',
+    description: 'Combined Aceternity "Simple FAQs with Background" + "FAQs with dashed lines". Section headers, dashed borders, +/× toggle, and word-by-word AI typewriter reveal on expand.',
+    controls: [
+      { name: 'title', type: 'text', defaultValue: 'Frequently Asked Questions' },
+      { name: 'subtitle', type: 'text', defaultValue: 'Everything you need to know about deploying AI agents and automating your workflows.' },
+      { name: 'theme', type: 'select', defaultValue: 'auto', options: ['auto', 'dark', 'light'] },
+    ],
+    render: (props) => (
+      <Box sx={{ width: '100%', minHeight: 600, overflow: 'auto' }}>
+        <FAQ
+          title={String(props.title || 'Frequently Asked Questions')}
+          subtitle={String(props.subtitle || '')}
+          theme={props.theme as any}
+          style={{ width: '100%', minHeight: '100%' }}
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `import React from 'react';\nimport { FAQ } from '@/components/ui/FAQ';\n\nexport function FAQDemo() {\n  return (\n    <FAQ\n      title="${props.title || 'Frequently Asked Questions'}"\n      subtitle="${props.subtitle || ''}"\n      theme="${props.theme || 'auto'}"\n    />\n  );\n}`,
+    sourceCode: FULL_FAQ_TSX,
+    scssCode: FULL_FAQ_SCSS,
   },
   {
     id: 'flip-words',

@@ -1,0 +1,236 @@
+/* FAQ — Aceternity "Simple FAQs with Background" + "FAQs with dashed lines" */
+
+/* ── Tokens ── */
+.root {
+  --faq-bg: #eaeaea;
+  --faq-title: #111111;
+  --faq-subtitle: #555555;
+  --faq-email: #3b82f6;
+  --faq-section-title: #444444;
+  --faq-item-open-bg: #ffffff;
+  --faq-dash: rgba(0, 0, 0, 0.25);
+  --faq-question: #1a1a1a;
+  --faq-answer: #555555;
+  --faq-icon: #777777;
+  --faq-icon-open: #111111;
+
+  width: 100%;
+  min-height: 100%;
+  background-color: var(--faq-bg);
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  padding: 60px 40px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Dark mode ── */
+:global([data-theme='dark']) .root,
+.root[data-theme='dark'] {
+  --faq-bg: #111111;
+  --faq-title: #f0f0f0;
+  --faq-subtitle: #888888;
+  --faq-email: #60a5fa;
+  --faq-section-title: #999999;
+  --faq-item-open-bg: #1a1a1a;
+  --faq-dash: rgba(255, 255, 255, 0.2);
+  --faq-question: #e8e8e8;
+  --faq-answer: #999999;
+  --faq-icon: #666666;
+  --faq-icon-open: #f0f0f0;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  max-width: 720px;
+  width: 100%;
+  margin-bottom: 52px;
+}
+
+.title {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--faq-title);
+  margin: 0 0 16px;
+  line-height: 1.15;
+}
+
+.subtitle {
+  font-size: 1rem;
+  color: var(--faq-subtitle);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.email {
+  color: var(--faq-email);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+/* ── Sections ── */
+.sections {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionTitle {
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faq-section-title);
+  margin: 0 0 8px;
+  padding-left: 2px;
+}
+
+/* ── Items list ── */
+.sectionItems {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Individual item ── */
+.item {
+  position: relative;
+  /* overflow visible so crosshair arms can bleed past the card */
+  overflow: visible;
+}
+
+/* Open item: just the background card, no border of its own */
+/* All dashed lines come from crossH + crossV siblings      */
+.item.itemOpen {
+  background-color: var(--faq-item-open-bg);
+  border-radius: 2px;
+  /* Breathing room so crossV arms don't intrude into adjacent items */
+  margin: 28px 0;
+}
+
+/* ── Crosshair element 1: HORIZONTAL lines ── */
+/* Sits at y = top and y = bottom of the card.                     */
+/* Extends 36px past the left AND right edges (past crossV lines). */
+.crossH {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -36px;
+  right: -36px;
+  border-top: 1px dashed var(--faq-dash);
+  border-bottom: 1px dashed var(--faq-dash);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Crosshair element 2: VERTICAL lines ── */
+/* Sits at x = left and x = right of the card.                     */
+/* Extends 12px FURTHER than crossH on top/bottom so the vertical  */
+/* arms visibly cross THROUGH the horizontal lines at each corner. */
+.crossV {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -12px;    /* 12px above crossH’s top:0 → crosses the horizontal line */
+  bottom: -12px; /* 12px below crossH’s bottom:0 → crosses the horizontal line */
+  border-left: 1px dashed var(--faq-dash);
+  border-right: 1px dashed var(--faq-dash);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Trigger button ── */
+.itemTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 20px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  box-sizing: border-box;
+
+  &:focus-visible {
+    outline: 2px solid var(--faq-email);
+    outline-offset: -2px;
+    border-radius: 4px;
+  }
+}
+
+.question {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--faq-question);
+  line-height: 1.5;
+  flex: 1;
+  min-width: 0; /* allows text to wrap properly */
+}
+
+.icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--faq-icon);
+  transition: color 0.15s ease;
+
+  .itemOpen & {
+    color: var(--faq-icon-open);
+  }
+}
+
+/* ── Answer card ── */
+.answerCard {
+  padding: 0 16px 20px;
+}
+
+.answer {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--faq-answer);
+  line-height: 1.75;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ── Blur-reveal animation — Aceternity "Simple FAQs" style ── */
+/* Words don't appear one-by-one like typing. Instead they all cascade   */
+/* in with a blur→sharp + transparent→opaque transition, like uncovering */
+/* hidden text. Fast stagger (28ms/word) so whole para reveals in ~0.4s. */
+@keyframes wordReveal {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+.revealText {
+  display: inline;
+}
+
+.revealWord {
+  display: inline;
+  opacity: 0;
+  animation: wordReveal 0.35s ease-out forwards;
+}

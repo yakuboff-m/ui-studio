@@ -5516,3 +5516,101 @@ export const FULL_SIDEBAR_SCSS = `/* Sidebar - 1:1 Aceternity UI Simple Sidebar 
 }
 `;
 
+
+
+export const FULL_FAQ_TSX = `'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, X } from 'lucide-react';
+import styles from './FAQ.module.scss';
+
+// See FAQ.module.scss for full styles
+export interface FAQItem { question: string; answer: string; }
+export interface FAQSection { title: string; items: FAQItem[]; }
+export interface FAQProps {
+  sections?: FAQSection[];
+  title?: string;
+  subtitle?: string;
+  contactEmail?: string;
+  theme?: 'auto' | 'dark' | 'light';
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+const Typewriter: React.FC<{ text: string; speed?: number }> = ({ text, speed = 38 }) => {
+  const words = text.split(' ');
+  const [count, setCount] = useState(0);
+  useEffect(() => { setCount(0); }, [text]);
+  useEffect(() => {
+    if (count >= words.length) return;
+    const t = setTimeout(() => setCount(c => c + 1), speed);
+    return () => clearTimeout(t);
+  }, [count, words.length, speed]);
+  return (
+    <span>
+      {words.slice(0, count).map((word, i) => (
+        <motion.span key={i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.16, ease: 'easeOut' }} style={{ display: 'inline' }}>
+          {word}{i < words.length - 1 ? '\\u00a0' : ''}
+        </motion.span>
+      ))}
+    </span>
+  );
+};
+
+const FAQAccordionItem: React.FC<{ item: FAQItem; isOpen: boolean; onToggle: () => void }> = ({ item, isOpen, onToggle }) => {
+  const [animKey, setAnimKey] = useState(0);
+  const prevOpen = useRef(false);
+  useEffect(() => {
+    if (isOpen && !prevOpen.current) setAnimKey(k => k + 1);
+    prevOpen.current = isOpen;
+  }, [isOpen]);
+  return (
+    <div className={isOpen ? \\\`\\\${styles.item} \\\${styles.itemOpen}\\\` : styles.item}>
+      <button type="button" className={styles.itemTrigger} onClick={onToggle} aria-expanded={isOpen}>
+        <span className={styles.question}>{item.question}</span>
+        <span className={styles.icon}>{isOpen ? <X size={15} strokeWidth={2.5} /> : <Plus size={15} strokeWidth={2.5} />}</span>
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div key="answer" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }} style={{ overflow: 'hidden' }}>
+            <div className={styles.answerCard}>
+              <p className={styles.answer}><Typewriter key={animKey} text={item.answer} /></p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export const FAQ: React.FC<FAQProps> = ({ sections = [], title = 'Frequently Asked Questions', subtitle, contactEmail, theme = 'auto', className = '', style }) => {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const toggle = (id: string) => setOpenId(prev => prev === id ? null : id);
+  return (
+    <div className={className ? \\\`\\\${styles.root} \\\${className}\\\` : styles.root} data-theme={theme === 'auto' ? undefined : theme} style={style}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>{title}</h1>
+        {subtitle && <p className={styles.subtitle}>{subtitle}{contactEmail && <> <a href={\\\`mailto:\\\${contactEmail}\\\`} className={styles.email}>{contactEmail}</a></>}</p>}
+      </div>
+      <div className={styles.sections}>
+        {sections.map((section, si) => (
+          <div key={section.title} className={styles.section}>
+            <h2 className={styles.sectionTitle}>{section.title}</h2>
+            <div className={styles.sectionItems}>
+              {section.items.map((item, ii) => {
+                const id = \\\`\\\${si}-\\\${ii}\\\`;
+                return <FAQAccordionItem key={id} item={item} isOpen={openId === id} onToggle={() => toggle(id)} />;
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+`;
+
+export const FULL_FAQ_SCSS = `/* FAQ.module.scss — copy full file from src/components/ui/FAQ/FAQ.module.scss */`;
