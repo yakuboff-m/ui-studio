@@ -5627,4 +5627,8 @@ export const FULL_COPY_BUTTON_TSX = `/* CopyButton.tsx — copy full file from s
 
 export const FULL_COPY_BUTTON_SCSS = `/* CopyButton.module.scss — copy full file from src/components/ui/CopyButton/CopyButton.module.scss */`;
 
+export const FULL_FOOTER_REVEAL_TSX = `/* FooterReveal.tsx — copy full file from src/components/ui/FooterReveal/FooterReveal.tsx */`;
+
+export const FULL_FOOTER_REVEAL_SCSS = `/* FooterReveal.module.scss — copy full file from src/components/ui/FooterReveal/FooterReveal.module.scss */`;
+
 

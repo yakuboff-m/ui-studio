@@ -46,6 +46,7 @@ import {
   NavbarHover,
   BentoExpand,
   CopyButton,
+  FooterReveal,
 } from '@/components/ui';
 
 
@@ -86,6 +87,8 @@ import {
   FULL_BENTO_EXPAND_SCSS,
   FULL_COPY_BUTTON_TSX,
   FULL_COPY_BUTTON_SCSS,
+  FULL_FOOTER_REVEAL_TSX,
+  FULL_FOOTER_REVEAL_SCSS,
 } from './componentSources';
 
 
@@ -184,6 +187,38 @@ const SKIPER96_ITEMS = [
 ];
 
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'footer-reveal',
+    name: 'Footer Reveal',
+    category: 'Layout',
+    description: 'Motion.dev "Footer reveal" — sticky under-page footer that fades, scales, and sharpens as scroll uncovers it. 100dvh cover with tape labels peeling back to reveal a bold blueberry footer plane.',
+    controls: [
+      { name: 'prompt', type: 'text', defaultValue: 'Scroll down' },
+      { name: 'kicker', type: 'text', defaultValue: 'Footer reveal' },
+      { name: 'brandName', type: 'text', defaultValue: 'Velocity' },
+      { name: 'footerColor', type: 'select', defaultValue: 'blueberry', options: ['blueberry', 'strawberry', 'emerald', 'amber', 'violet'] },
+      { name: 'scrollTarget', type: 'select', defaultValue: 'container', options: ['container', 'window'] },
+      { name: 'theme', type: 'select', defaultValue: 'dark', options: ['dark', 'light', 'auto'] },
+    ],
+    render: (props) => (
+      <Box sx={{ width: '100%', minHeight: props.scrollTarget === 'container' ? 680 : 'auto', display: 'flex', justifyContent: 'center' }}>
+        <FooterReveal
+          prompt={String(props.prompt || 'Scroll down')}
+          kicker={String(props.kicker || 'Footer reveal')}
+          brandName={String(props.brandName || 'Velocity')}
+          footerColor={props.footerColor as any}
+          scrollTarget={props.scrollTarget as any}
+          theme={props.theme as any}
+          containerHeight="680px"
+          style={{ width: '100%' }}
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `import React from 'react';\nimport { FooterReveal } from '@/components/ui/FooterReveal';\n\nexport function FooterRevealDemo() {\n  return (\n    <FooterReveal\n      prompt="${props.prompt || 'Scroll down'}"\n      kicker="${props.kicker || 'Footer reveal'}"\n      brandName="${props.brandName || 'Velocity'}"\n      footerColor="${props.footerColor || 'blueberry'}"\n      scrollTarget="${props.scrollTarget || 'container'}"\n      theme="${props.theme || 'dark'}"\n    />\n  );\n}`,
+    sourceCode: FULL_FOOTER_REVEAL_TSX,
+    scssCode: FULL_FOOTER_REVEAL_SCSS,
+  },
   {
     id: 'bento-expand',
     name: 'Feature Expand Bento',
