@@ -47,6 +47,7 @@ import {
   BentoExpand,
   CopyButton,
   FooterReveal,
+  Typewriter,
 } from '@/components/ui';
 
 
@@ -89,6 +90,8 @@ import {
   FULL_COPY_BUTTON_SCSS,
   FULL_FOOTER_REVEAL_TSX,
   FULL_FOOTER_REVEAL_SCSS,
+  FULL_TYPEWRITER_TSX,
+  FULL_TYPEWRITER_SCSS,
 } from './componentSources';
 
 
@@ -187,6 +190,38 @@ const SKIPER96_ITEMS = [
 ];
 
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'typewriter',
+    name: 'Typewriter',
+    category: 'Text Animations',
+    description: 'Motion.dev "Typewriter" — natural human typing animation that varies stroke timing based on cursor position within words, punctuation pauses, capitalization delays, and a blinking cursor.',
+    controls: [
+      { name: 'text', type: 'text', defaultValue: 'Hello world!' },
+      { name: 'speed', type: 'select', defaultValue: 'normal', options: ['chill', 'slow', 'normal', 'fast'] },
+      { name: 'variance', type: 'select', defaultValue: 'natural', options: ['natural', 'none'] },
+      { name: 'cursorColor', type: 'select', defaultValue: 'mint', options: ['mint', 'blue', 'purple', 'amber', 'rose'] },
+      { name: 'loop', type: 'boolean', defaultValue: false },
+      { name: 'theme', type: 'select', defaultValue: 'dark', options: ['dark', 'light', 'auto'] },
+    ],
+    render: (props) => (
+      <Box sx={{ width: '100%', maxWidth: 720, my: 2 }}>
+        <Typewriter
+          text={String(props.text || 'Hello world!')}
+          speed={props.speed as any}
+          variance={props.variance as any}
+          cursorColor={props.cursorColor as any}
+          loop={Boolean(props.loop)}
+          theme={props.theme as any}
+          showCard
+          showReplay
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `import React from 'react';\nimport { Typewriter } from '@/components/ui/Typewriter';\n\nexport function TypewriterDemo() {\n  return (\n    <Typewriter\n      as="h2"\n      speed="${props.speed || 'normal'}"\n      variance="${props.variance || 'natural'}"\n      cursorColor="${props.cursorColor || 'mint'}"\n      theme="${props.theme || 'dark'}"\n    >\n      ${props.text || 'Hello world!'}\n    </Typewriter>\n  );\n}`,
+    sourceCode: FULL_TYPEWRITER_TSX,
+    scssCode: FULL_TYPEWRITER_SCSS,
+  },
   {
     id: 'footer-reveal',
     name: 'Footer Reveal',

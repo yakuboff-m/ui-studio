@@ -1,0 +1,174 @@
+/*
+ * Typewriter.module.scss
+ * Motion.dev "Typewriter" — Natural typing cadence with variable keystroke delays,
+ * backspacing, and animated blinking cursor.
+ */
+
+.container {
+  --tw-bg: #0d1111;
+  --tw-text: #ededec;
+  --tw-cursor: #00ff87;
+  --tw-card-bg: rgba(13, 17, 17, 0.85);
+  --tw-border: rgba(255, 255, 255, 0.08);
+  --tw-font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  width: 100%;
+  padding: 48px 32px;
+  border-radius: 20px;
+  background: var(--tw-bg);
+  border: 1px solid var(--tw-border);
+  color: var(--tw-text);
+  font-family: var(--tw-font-mono);
+  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+
+  /* Color presets */
+  &[data-color='mint'] {
+    --tw-cursor: #00ff87;
+  }
+  &[data-color='blue'] {
+    --tw-cursor: #38bdf8;
+  }
+  &[data-color='purple'] {
+    --tw-cursor: #a855f7;
+  }
+  &[data-color='amber'] {
+    --tw-cursor: #f59e0b;
+  }
+  &[data-color='rose'] {
+    --tw-cursor: #fb7185;
+  }
+
+  /* Theme overrides */
+  &[data-theme='light'] {
+    --tw-bg: #f8f8f6;
+    --tw-text: #1a1a1c;
+    --tw-card-bg: rgba(255, 255, 255, 0.9);
+    --tw-border: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.06);
+  }
+  &[data-theme='dark'] {
+    --tw-bg: #0d1111;
+    --tw-text: #ededec;
+    --tw-border: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.typewriterWrapper {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  position: relative;
+  text-align: center;
+  max-width: 100%;
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--tw-font-mono);
+  font-size: clamp(28px, 4.5vw, 48px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  color: var(--tw-text);
+  display: inline-flex;
+  align-items: baseline;
+  text-wrap: balance;
+  word-break: break-word;
+}
+
+.textSpan {
+  font-family: var(--tw-font-mono);
+  color: var(--tw-text);
+  white-space: pre-wrap;
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: var(--tw-cursor);
+  position: relative;
+  top: 0.1em;
+  left: 0.15em;
+  border-radius: 1px;
+  vertical-align: baseline;
+
+  &.blinking {
+    animation: cursorBlink 1s infinite steps(1, start);
+  }
+
+  &.typing {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+@keyframes cursorBlink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+/* ── Top / Bottom bar controls ── */
+.statusBar {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.replayBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--tw-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: color-mix(in srgb, var(--tw-text) 70%, transparent);
+  font-family: var(--tw-font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.09);
+    color: var(--tw-text);
+    border-color: color-mix(in srgb, var(--tw-border) 160%, white);
+  }
+
+  svg {
+    transition: transform 0.25s ease;
+  }
+
+  &:active svg {
+    transform: rotate(-90deg);
+  }
+}
+
+.badgeTag {
+  font-family: var(--tw-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tw-cursor) 15%, transparent);
+  color: var(--tw-cursor);
+  border: 1px solid color-mix(in srgb, var(--tw-cursor) 25%, transparent);
+}

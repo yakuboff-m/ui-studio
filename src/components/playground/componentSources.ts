@@ -5631,4 +5631,8 @@ export const FULL_FOOTER_REVEAL_TSX = `/* FooterReveal.tsx — copy full file fr
 
 export const FULL_FOOTER_REVEAL_SCSS = `/* FooterReveal.module.scss — copy full file from src/components/ui/FooterReveal/FooterReveal.module.scss */`;
 
+export const FULL_TYPEWRITER_TSX = `/* Typewriter.tsx — copy full file from src/components/ui/Typewriter/Typewriter.tsx */`;
+
+export const FULL_TYPEWRITER_SCSS = `/* Typewriter.module.scss — copy full file from src/components/ui/Typewriter/Typewriter.module.scss */`;
+
 
