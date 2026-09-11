@@ -49,6 +49,7 @@ import {
   FooterReveal,
   Typewriter,
   UserButton,
+  IosPointer,
 } from '@/components/ui';
 
 
@@ -95,6 +96,8 @@ import {
   FULL_TYPEWRITER_SCSS,
   FULL_USER_BUTTON_TSX,
   FULL_USER_BUTTON_SCSS,
+  FULL_IOS_POINTER_TSX,
+  FULL_IOS_POINTER_SCSS,
 } from './componentSources';
 
 
@@ -193,6 +196,32 @@ const SKIPER96_ITEMS = [
 ];
 
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'ios-pointer',
+    name: 'iOS Pointer Animation',
+    category: 'Feedback',
+    description: 'Motion.dev "iOS pointer animation" — authentic iPadOS cursor with magnetic snapping, spring resistance drag, dynamic pill morphing, and label parallax.',
+    controls: [
+      { name: 'label', type: 'text', defaultValue: 'Appearance' },
+      { name: 'mode', type: 'select', defaultValue: 'single', options: ['single', 'navbar', 'segmented'] },
+      { name: 'theme', type: 'select', defaultValue: 'auto', options: ['auto', 'dark', 'light'] },
+      { name: 'magneticStrength', type: 'select', defaultValue: '0.1', options: ['0.05', '0.1', '0.15', '0.2'] },
+    ],
+    render: (props) => (
+      <Box sx={{ width: '100%', minHeight: 380, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <IosPointer
+          label={String(props.label || 'Appearance')}
+          mode={props.mode as 'single' | 'navbar' | 'segmented'}
+          theme={props.theme as 'auto' | 'dark' | 'light'}
+          magneticStrength={parseFloat(String(props.magneticStrength || '0.1'))}
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `import React from 'react';\nimport { IosPointer } from '@/components/ui/IosPointer';\n\nexport function IosPointerDemo() {\n  return (\n    <IosPointer\n      label="${props.label || 'Appearance'}"\n      mode="${props.mode || 'single'}"\n      theme="${props.theme || 'auto'}"\n      magneticStrength={${props.magneticStrength || 0.1}}\n    />\n  );\n}`,
+    sourceCode: FULL_IOS_POINTER_TSX,
+    scssCode: FULL_IOS_POINTER_SCSS,
+  },
   {
     id: 'clerk-user-button',
     name: 'Clerk: User Button',
