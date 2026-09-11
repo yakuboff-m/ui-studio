@@ -17,12 +17,14 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-[data-theme='dark'] {
+html[data-theme='dark'],
+body[data-theme='dark'] {
   background-color: $dark-bg;
   color: $dark-text-primary;
 }
 
-[data-theme='light'] {
+html[data-theme='light'],
+body[data-theme='light'] {
   background-color: $light-bg;
   color: $light-text-primary;
 }
@@ -92,6 +94,7 @@ body {
 .gradient-text {
   background: $gradient-primary;
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   display: inline-block;
 }

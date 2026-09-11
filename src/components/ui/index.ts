@@ -18,3 +18,4 @@ export * from './BentoExpand';
 export * from './CopyButton';
 export * from './FooterReveal';
 export * from './Typewriter';
+export * from './UserButton';

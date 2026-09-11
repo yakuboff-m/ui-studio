@@ -48,6 +48,7 @@ import {
   CopyButton,
   FooterReveal,
   Typewriter,
+  UserButton,
 } from '@/components/ui';
 
 
@@ -92,6 +93,8 @@ import {
   FULL_FOOTER_REVEAL_SCSS,
   FULL_TYPEWRITER_TSX,
   FULL_TYPEWRITER_SCSS,
+  FULL_USER_BUTTON_TSX,
+  FULL_USER_BUTTON_SCSS,
 } from './componentSources';
 
 
@@ -190,6 +193,32 @@ const SKIPER96_ITEMS = [
 ];
 
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'clerk-user-button',
+    name: 'Clerk: User Button',
+    category: 'Navigation',
+    description: 'Motion.dev "Clerk: User Button" — closed avatar morphs seamlessly into an account menu using shared layoutId spring animation on container and avatar.',
+    controls: [
+      { name: 'fullName', type: 'text', defaultValue: 'Ada Lovelace' },
+      { name: 'email', type: 'text', defaultValue: 'ada@motion.dev' },
+      { name: 'theme', type: 'select', defaultValue: 'auto', options: ['auto', 'dark', 'light'] },
+    ],
+    render: (props) => (
+      <Box sx={{ width: '100%', minHeight: 340, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', pt: 6 }}>
+        <UserButton
+          user={{
+            fullName: String(props.fullName || 'Ada Lovelace'),
+            email: String(props.email || 'ada@motion.dev'),
+          }}
+          theme={props.theme as any}
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `import React from 'react';\nimport { UserButton } from '@/components/ui/UserButton';\n\nexport function UserButtonDemo() {\n  return (\n    <UserButton\n      user={{\n        fullName: "${props.fullName || 'Ada Lovelace'}",\n        email: "${props.email || 'ada@motion.dev'}",\n      }}\n      theme="${props.theme || 'dark'}"\n    />\n  );\n}`,
+    sourceCode: FULL_USER_BUTTON_TSX,
+    scssCode: FULL_USER_BUTTON_SCSS,
+  },
   {
     id: 'typewriter',
     name: 'Typewriter',
