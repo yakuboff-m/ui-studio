@@ -1,0 +1,158 @@
+/*
+ * NavbarHover.module.scss
+ * Aceternity-style "Navbar with hover effect"
+ * — A dark pill-shaped bar with a smooth sliding hover pill on nav links
+ */
+
+/* ── Root wrapper: full width, centered layout ── */
+.root {
+  /* CSS custom properties – dark theme defaults */
+  --nb-bg: rgba(23, 23, 23, 0.95);
+  --nb-border: rgba(255, 255, 255, 0.08);
+  --nb-text: rgba(255, 255, 255, 0.72);
+  --nb-text-hover: #ffffff;
+  --nb-pill-bg: rgba(255, 255, 255, 0.10);
+  --nb-cta-bg: #ffffff;
+  --nb-cta-text: #111111;
+  --nb-cta-hover: rgba(255, 255, 255, 0.88);
+  --nb-logo-text: #ffffff;
+
+  /* Light theme overrides — only applied when theme="light" is explicitly set */
+  &[data-theme='light'] {
+    --nb-bg: rgba(255, 255, 255, 0.92);
+    --nb-border: rgba(0, 0, 0, 0.10);
+    --nb-text: rgba(0, 0, 0, 0.60);
+    --nb-text-hover: #000000;
+    --nb-pill-bg: rgba(0, 0, 0, 0.06);
+    --nb-cta-bg: #111111;
+    --nb-cta-text: #ffffff;
+    --nb-cta-hover: #333333;
+    --nb-logo-text: #111111;
+  }
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 24px 20px;
+  font-family: 'Inter', 'Outfit', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Navbar pill container ── */
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 8px 12px;
+  background: var(--nb-bg);
+  border: 1px solid var(--nb-border);
+  border-radius: 9999px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 0 0 1px var(--nb-border),
+    0 4px 24px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 860px;
+}
+
+/* ── Logo section ── */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-right: 8px;
+  text-decoration: none;
+}
+
+.logoText {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--nb-logo-text);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* ── Nav link list ── */
+.navList {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  position: relative; /* pill positioned relative to this */
+  padding: 2px;
+}
+
+/* ── Sliding pill ── */
+/* Absolutely positioned inside .navList, driven by inline style (left + width). */
+/* Transitions use CSS so the browser handles the interpolation — this gives us  */
+/* the smooth "liquid" slide that matches the Aceternity original.               */
+.pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--nb-pill-bg);
+  pointer-events: none;
+  /* Smooth spring-like transition between nav items */
+  transition:
+    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.15s ease;
+  will-change: transform, width, opacity;
+}
+
+/* ── Individual nav link ── */
+.navLink {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--nb-text);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  /* Text color transitions to white when hovered */
+  transition: color 0.18s ease;
+
+  &:hover {
+    color: var(--nb-text-hover);
+  }
+}
+
+/* ── CTA Button ── */
+.cta {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 8px 20px;
+  border-radius: 9999px;
+  border: none;
+  background: var(--nb-cta-bg);
+  color: var(--nb-cta-text);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.18s ease,
+    transform 0.15s ease,
+    box-shadow 0.18s ease;
+
+  &:hover {
+    background: var(--nb-cta-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}

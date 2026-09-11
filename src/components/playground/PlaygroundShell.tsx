@@ -43,6 +43,7 @@ import {
   FlipWords,
   SimpleSidebar,
   FAQ,
+  NavbarHover,
 } from '@/components/ui';
 
 import {
@@ -76,6 +77,8 @@ import {
   FULL_SIDEBAR_SCSS,
   FULL_FAQ_TSX,
   FULL_FAQ_SCSS,
+  FULL_NAVBAR_HOVER_TSX,
+  FULL_NAVBAR_HOVER_SCSS,
 } from './componentSources';
 
 import styles from './PlaygroundShell.module.scss';
@@ -174,7 +177,33 @@ const SKIPER96_ITEMS = [
 
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
   {
+    id: 'navbar-hover',
+    name: 'Navbar with Hover Effect',
+    category: 'Navigation',
+    description: '1:1 Aceternity UI "Navbar with hover effect". Pill-shaped dark navbar with a smooth sliding background pill that glides between nav items on hover. Logo, nav links, and CTA button.',
+    controls: [
+      { name: 'logoText', type: 'text', defaultValue: 'DevStudio' },
+      { name: 'ctaLabel', type: 'text', defaultValue: 'Book a call' },
+      { name: 'theme', type: 'select', defaultValue: 'auto', options: ['auto', 'dark', 'light'] },
+    ],
+    render: (props) => (
+      <Box sx={{ width: '100%', minHeight: 140, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
+        <NavbarHover
+          logoText={String(props.logoText || 'DevStudio')}
+          ctaLabel={String(props.ctaLabel || 'Book a call')}
+          theme={props.theme as any}
+          style={{ width: '100%' }}
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `import React from 'react';\nimport { NavbarHover } from '@/components/ui/NavbarHover';\n\nexport function NavbarHoverDemo() {\n  return (\n    <NavbarHover\n      logoText="${props.logoText || 'DevStudio'}"\n      ctaLabel="${props.ctaLabel || 'Book a call'}"\n      theme="${props.theme || 'auto'}"\n    />\n  );\n}`,
+    sourceCode: FULL_NAVBAR_HOVER_TSX,
+    scssCode: FULL_NAVBAR_HOVER_SCSS,
+  },
+  {
     id: 'simple-sidebar',
+
     name: 'Simple Sidebar',
     category: 'Layout',
     description: '1:1 Aceternity UI Simple Sidebar with floating hover pill highlight, mobile drawer, user profile, and responsive dashboard layout.',

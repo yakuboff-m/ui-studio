@@ -13,3 +13,4 @@ export * from './NotificationStack';
 export * from './FlipWords';
 export * from './Sidebar';
 export * from './FAQ';
+export * from './NavbarHover';

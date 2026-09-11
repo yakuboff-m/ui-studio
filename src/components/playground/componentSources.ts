@@ -5614,3 +5614,7 @@ export const FAQ: React.FC<FAQProps> = ({ sections = [], title = 'Frequently Ask
 `;
 
 export const FULL_FAQ_SCSS = `/* FAQ.module.scss — copy full file from src/components/ui/FAQ/FAQ.module.scss */`;
+
+export const FULL_NAVBAR_HOVER_TSX = `/* NavbarHover.tsx — copy full file from src/components/ui/NavbarHover/NavbarHover.tsx */`;
+
+export const FULL_NAVBAR_HOVER_SCSS = `/* NavbarHover.module.scss — copy full file from src/components/ui/NavbarHover/NavbarHover.module.scss */`;
