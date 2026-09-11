@@ -15,3 +15,4 @@ export * from './Sidebar';
 export * from './FAQ';
 export * from './NavbarHover';
 export * from './BentoExpand';
+export * from './CopyButton';

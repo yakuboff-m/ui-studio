@@ -5623,3 +5623,8 @@ export const FULL_BENTO_EXPAND_TSX = `/* BentoExpand.tsx — copy full file from
 
 export const FULL_BENTO_EXPAND_SCSS = `/* BentoExpand.module.scss — copy full file from src/components/ui/BentoExpand/BentoExpand.module.scss */`;
 
+export const FULL_COPY_BUTTON_TSX = `/* CopyButton.tsx — copy full file from src/components/ui/CopyButton/CopyButton.tsx */`;
+
+export const FULL_COPY_BUTTON_SCSS = `/* CopyButton.module.scss — copy full file from src/components/ui/CopyButton/CopyButton.module.scss */`;
+
+

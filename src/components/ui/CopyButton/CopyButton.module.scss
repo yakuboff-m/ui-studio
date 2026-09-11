@@ -1,0 +1,77 @@
+/*
+ * CopyButton.module.scss
+ * Motion.dev copy button — blur transitions + pathLength checkmark
+ */
+
+.btn {
+  --cb-bg: rgba(255, 255, 255, 0.06);
+  --cb-bg-hover: rgba(255, 255, 255, 0.10);
+  --cb-border: rgba(255, 255, 255, 0.14);
+  --cb-text: rgba(255, 255, 255, 0.85);
+  --cb-bg-copied: rgba(16, 185, 98, 0.12);
+  --cb-border-copied: rgba(16, 185, 98, 0.55);
+  --cb-text-copied: #10b962;
+
+  &[data-theme='light'] {
+    --cb-bg: rgba(0, 0, 0, 0.04);
+    --cb-bg-hover: rgba(0, 0, 0, 0.07);
+    --cb-border: rgba(0, 0, 0, 0.14);
+    --cb-text: rgba(0, 0, 0, 0.75);
+    --cb-bg-copied: rgba(16, 185, 98, 0.08);
+    --cb-border-copied: rgba(16, 185, 98, 0.45);
+    --cb-text-copied: #059652;
+  }
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cb-bg);
+  border: 1.5px solid var(--cb-border);
+  /* Matches motion.dev original — rounded rect, NOT a pill */
+  border-radius: 10px;
+  padding: 9px 16px;
+  cursor: pointer;
+  font-family: 'Inter', 'Outfit', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--cb-text);
+  -webkit-font-smoothing: antialiased;
+  outline: none;
+  /* clip the exiting span's blur/slide as it leaves */
+  overflow: hidden;
+
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
+
+  &:hover {
+    background: var(--cb-bg-hover);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--cb-border-copied);
+    outline-offset: 3px;
+  }
+
+  &[data-copied] {
+    background: var(--cb-bg-copied);
+    border-color: var(--cb-border-copied);
+    color: var(--cb-text-copied);
+  }
+}
+
+/*
+ * .inner — normal flow flex row.
+ * With AnimatePresence mode="popLayout", the *exiting* span is yanked
+ * out of flow (made absolute) by Framer Motion automatically.
+ * The *entering* span stays in flow and drives the button width.
+ * No sizer or absolute tricks needed.
+ */
+.inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  pointer-events: none;
+}

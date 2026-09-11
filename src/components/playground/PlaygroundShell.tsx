@@ -45,7 +45,9 @@ import {
   FAQ,
   NavbarHover,
   BentoExpand,
+  CopyButton,
 } from '@/components/ui';
+
 
 import {
   FULL_RESIZABLE_NAV_TSX,
@@ -82,7 +84,10 @@ import {
   FULL_NAVBAR_HOVER_SCSS,
   FULL_BENTO_EXPAND_TSX,
   FULL_BENTO_EXPAND_SCSS,
+  FULL_COPY_BUTTON_TSX,
+  FULL_COPY_BUTTON_SCSS,
 } from './componentSources';
+
 
 import styles from './PlaygroundShell.module.scss';
 
@@ -203,6 +208,32 @@ const COMPONENT_REGISTRY: RegisteredComponent[] = [
       `import React from 'react';\nimport { BentoExpand } from '@/components/ui/BentoExpand';\n\nexport function BentoExpandDemo() {\n  return (\n    <BentoExpand\n      heading="${props.heading || 'See what changed.'}"\n      subheading="${props.subheading || ''}"\n      theme="${props.theme || 'auto'}"\n    />\n  );\n}`,
     sourceCode: FULL_BENTO_EXPAND_TSX,
     scssCode: FULL_BENTO_EXPAND_SCSS,
+  },
+  {
+    id: 'copy-button',
+    name: 'Copy Button',
+    category: 'Actions',
+    description: 'Motion.dev copy button — clipboard icon transitions to a drawn SVG checkmark via pathLength animation, with blur fade between states and a smooth pill-width layout morph. Resets after 2s.',
+    controls: [
+      { name: 'value', type: 'text', defaultValue: 'Hello, world!' },
+      { name: 'label', type: 'text', defaultValue: 'Copy' },
+      { name: 'copiedLabel', type: 'text', defaultValue: 'Copied!' },
+      { name: 'theme', type: 'select', defaultValue: 'auto', options: ['auto', 'dark', 'light'] },
+    ],
+    render: (props) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+        <CopyButton
+          value={String(props.value || 'Hello, world!')}
+          label={String(props.label || 'Copy')}
+          copiedLabel={String(props.copiedLabel || 'Copied!')}
+          theme={props.theme as any}
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `import { CopyButton } from '@/components/ui/CopyButton';\n\nexport function CopyButtonDemo() {\n  return (\n    <CopyButton\n      value="${props.value || 'Hello, world!'}"\n      label="${props.label || 'Copy'}"\n      copiedLabel="${props.copiedLabel || 'Copied!'}"\n      theme="${props.theme || 'auto'}"\n    />\n  );\n}`,
+    sourceCode: FULL_COPY_BUTTON_TSX,
+    scssCode: FULL_COPY_BUTTON_SCSS,
   },
   {
     id: 'navbar-hover',
