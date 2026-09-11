@@ -5618,3 +5618,8 @@ export const FULL_FAQ_SCSS = `/* FAQ.module.scss — copy full file from src/com
 export const FULL_NAVBAR_HOVER_TSX = `/* NavbarHover.tsx — copy full file from src/components/ui/NavbarHover/NavbarHover.tsx */`;
 
 export const FULL_NAVBAR_HOVER_SCSS = `/* NavbarHover.module.scss — copy full file from src/components/ui/NavbarHover/NavbarHover.module.scss */`;
+
+export const FULL_BENTO_EXPAND_TSX = `/* BentoExpand.tsx — copy full file from src/components/ui/BentoExpand/BentoExpand.tsx */`;
+
+export const FULL_BENTO_EXPAND_SCSS = `/* BentoExpand.module.scss — copy full file from src/components/ui/BentoExpand/BentoExpand.module.scss */`;
+

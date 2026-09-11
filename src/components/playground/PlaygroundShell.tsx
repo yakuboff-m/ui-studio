@@ -44,6 +44,7 @@ import {
   SimpleSidebar,
   FAQ,
   NavbarHover,
+  BentoExpand,
 } from '@/components/ui';
 
 import {
@@ -79,6 +80,8 @@ import {
   FULL_FAQ_SCSS,
   FULL_NAVBAR_HOVER_TSX,
   FULL_NAVBAR_HOVER_SCSS,
+  FULL_BENTO_EXPAND_TSX,
+  FULL_BENTO_EXPAND_SCSS,
 } from './componentSources';
 
 import styles from './PlaygroundShell.module.scss';
@@ -176,6 +179,31 @@ const SKIPER96_ITEMS = [
 ];
 
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'bento-expand',
+    name: 'Feature Expand Bento',
+    category: 'Layout',
+    description: 'Motion.dev "Feature expand bento" — bento grid of feature cards that expand in place into a detail modal using Framer Motion shared-element layoutId animation.',
+    controls: [
+      { name: 'heading', type: 'text', defaultValue: 'See what changed.' },
+      { name: 'subheading', type: 'text', defaultValue: 'Six surfaces, one line to install. Open any card to go deeper.' },
+      { name: 'theme', type: 'select', defaultValue: 'auto', options: ['auto', 'dark', 'light'] },
+    ],
+    render: (props) => (
+      <Box sx={{ width: '100%', minHeight: 640, overflow: 'auto' }}>
+        <BentoExpand
+          heading={String(props.heading || 'See what changed.')}
+          subheading={String(props.subheading || '')}
+          theme={props.theme as any}
+          style={{ width: '100%', minHeight: '100%' }}
+        />
+      </Box>
+    ),
+    generateCode: (props) =>
+      `import React from 'react';\nimport { BentoExpand } from '@/components/ui/BentoExpand';\n\nexport function BentoExpandDemo() {\n  return (\n    <BentoExpand\n      heading="${props.heading || 'See what changed.'}"\n      subheading="${props.subheading || ''}"\n      theme="${props.theme || 'auto'}"\n    />\n  );\n}`,
+    sourceCode: FULL_BENTO_EXPAND_TSX,
+    scssCode: FULL_BENTO_EXPAND_SCSS,
+  },
   {
     id: 'navbar-hover',
     name: 'Navbar with Hover Effect',

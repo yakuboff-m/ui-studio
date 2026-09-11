@@ -1,0 +1,329 @@
+/*
+ * BentoExpand.module.scss
+ * Motion.dev "Feature expand bento" — card-to-modal shared element animation
+ */
+
+/* ── Root wrapper ── */
+.root {
+  --be-bg: linear-gradient(135deg, #f5f0e4 0%, #f0e8d0 30%, #e8c8a0 65%, #d4a870 100%);
+  --be-card-bg: rgba(255, 255, 255, 0.82);
+  --be-card-hover: rgba(255, 255, 255, 0.95);
+  --be-modal-bg: #f8f5ef;
+  --be-text-primary: #1a1a1a;
+  --be-text-secondary: rgba(26, 26, 26, 0.65);
+  --be-icon-bg: rgba(26, 26, 26, 0.08);
+  --be-icon-color: #1a1a1a;
+  --be-expand-bg: rgba(26, 26, 26, 0.07);
+  --be-expand-color: rgba(26, 26, 26, 0.55);
+  --be-highlight-bg: rgba(26, 26, 26, 0.05);
+  --be-highlight-label: #1a1a1a;
+  --be-highlight-note: rgba(26, 26, 26, 0.55);
+  --be-bullet-check: rgba(26, 26, 26, 0.55);
+  --be-close-bg: rgba(26, 26, 26, 0.08);
+  --be-close-color: rgba(26, 26, 26, 0.7);
+  --be-shadow: 0 2px 16px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  --be-modal-shadow: 0 20px 60px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --be-backdrop: rgba(0, 0, 0, 0.35);
+
+  /* Dark overrides */
+  &[data-theme='dark'] {
+    --be-bg: linear-gradient(135deg, #1a1a1a 0%, #1e1a14 50%, #241e10 100%);
+    --be-card-bg: rgba(255, 255, 255, 0.06);
+    --be-card-hover: rgba(255, 255, 255, 0.10);
+    --be-modal-bg: #1e1b14;
+    --be-text-primary: #f0ede8;
+    --be-text-secondary: rgba(240, 237, 232, 0.55);
+    --be-icon-bg: rgba(255, 255, 255, 0.10);
+    --be-icon-color: #f0ede8;
+    --be-expand-bg: rgba(255, 255, 255, 0.08);
+    --be-expand-color: rgba(240, 237, 232, 0.55);
+    --be-highlight-bg: rgba(255, 255, 255, 0.06);
+    --be-highlight-label: #f0ede8;
+    --be-highlight-note: rgba(240, 237, 232, 0.55);
+    --be-bullet-check: rgba(240, 237, 232, 0.55);
+    --be-close-bg: rgba(255, 255, 255, 0.10);
+    --be-close-color: rgba(240, 237, 232, 0.7);
+    --be-shadow: 0 2px 16px rgba(0, 0, 0, 0.3);
+    --be-modal-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    --be-backdrop: rgba(0, 0, 0, 0.6);
+  }
+
+  background: var(--be-bg);
+  min-height: 100%;
+  width: 100%;
+  font-family: 'Inter', 'Outfit', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  padding: 48px 24px 64px;
+}
+
+/* ── Inner container ── */
+.inner {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+/* ── Page heading ── */
+.heading {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  color: var(--be-text-primary);
+  letter-spacing: -0.025em;
+  margin: 0 0 8px;
+  line-height: 1.15;
+}
+
+.subheading {
+  font-size: 15px;
+  color: var(--be-text-secondary);
+  margin: 0 0 32px;
+  line-height: 1.6;
+}
+
+/* ── Grid ── */
+.grid {
+  display: grid;
+  /* 2 equal columns */
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  position: relative;
+}
+
+/* ── Card base ── */
+.card {
+  position: relative;
+  background: var(--be-card-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: var(--be-shadow);
+  padding: 24px 24px 28px;
+  cursor: pointer;
+  /* border radius set via inline style for layoutId compatibility */
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
+
+  &:hover {
+    background: var(--be-card-hover);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10), 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+    .expandBtn {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+/* Full-width card (spans both columns) */
+.cardFull {
+  grid-column: 1 / -1;
+}
+
+/* Half-width card (single column) */
+.cardHalf {
+  grid-column: span 1;
+}
+
+/* ── Expand button (top-right corner of card) ── */
+.expandBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: var(--be-expand-bg);
+  color: var(--be-expand-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.85);
+  transition: opacity 0.18s ease, transform 0.18s ease, background 0.15s ease;
+
+  &:hover {
+    background: rgba(26, 26, 26, 0.14);
+    color: var(--be-text-primary);
+  }
+}
+
+/* ── Icon wrap (shared between card and modal via layoutId) ── */
+.iconWrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--be-icon-bg);
+  color: var(--be-icon-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+
+/* ── Card text ── */
+.cardTitle {
+  font-size: 18px;
+  font-weight: 650;
+  color: var(--be-text-primary);
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+  line-height: 1.25;
+}
+
+.cardSubtitle {
+  font-size: 14px;
+  color: var(--be-text-secondary);
+  margin: 0;
+  line-height: 1.6;
+  max-width: 420px;
+}
+
+/* ── Modal layer (fixed overlay container) ── */
+.modalLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* ── Backdrop ── */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--be-backdrop);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 199;
+}
+
+/* ── Modal card ── */
+.modal {
+  position: relative;
+  background: var(--be-modal-bg);
+  box-shadow: var(--be-modal-shadow);
+  padding: 28px 32px 36px;
+  width: 100%;
+  max-width: 520px;
+  z-index: 200;
+  /* border-radius set inline for layoutId compatibility */
+  overflow: hidden;
+}
+
+/* ── Close button ── */
+.closeBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--be-close-bg);
+  color: var(--be-close-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: rgba(26, 26, 26, 0.14);
+    color: var(--be-text-primary);
+  }
+}
+
+/* ── Modal text (expanded state) ── */
+.modalTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--be-text-primary);
+  letter-spacing: -0.025em;
+  margin: 0 0 10px;
+  line-height: 1.2;
+}
+
+.modalHeadline {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--be-text-primary);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+/* ── Extra content (fades in after layout) ── */
+.modalExtra {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modalBody {
+  font-size: 14px;
+  color: var(--be-text-secondary);
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* ── Highlight box ── */
+.highlight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--be-highlight-bg);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.highlightLabel {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--be-highlight-label);
+  white-space: nowrap;
+}
+
+.highlightNote {
+  font-size: 13px;
+  color: var(--be-highlight-note);
+  line-height: 1.4;
+}
+
+/* ── Bullets ── */
+.bullets {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--be-text-secondary);
+  line-height: 1.5;
+}
+
+.bulletCheck {
+  flex-shrink: 0;
+  color: var(--be-bullet-check);
+  margin-top: 1px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cardFull {
+    grid-column: 1;
+  }
+}
