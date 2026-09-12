@@ -5,8 +5,10 @@ import {
   AnimatePresence,
   animate,
   motion,
+  motionValue,
   useMotionValue,
-  useSpring,
+  useTransform,
+  type MotionValue,
 } from 'framer-motion';
 import styles from './IosPointer.module.scss';
 
@@ -24,12 +26,17 @@ export interface IosPointerProps {
 }
 
 interface TargetInfo {
+  id: string;
   element: HTMLElement;
   rect: DOMRect;
-  borderRadius: number;
 }
 
-// Chevron Icon exact SVG from motion.dev example
+// Exact Motion.dev constants
+const DEFAULT_CURSOR_SIZE = 17;
+const PADDING = 5; // 5px padding on each side -> +10px total
+const SNAP_TRANSITION = { duration: 0.15, ease: [0.38, 0.12, 0.29, 1] } as const;
+
+// Chevron Icon exact SVG from Motion.dev
 function ChevronLeft() {
   return (
     <svg
@@ -124,165 +131,214 @@ export const IosPointer: React.FC<IosPointerProps> = ({
 
   const activeTheme = theme === 'auto' ? autoTheme : theme;
 
-  // Pointer position raw motion values
-  const pointerX = useMotionValue(-100);
-  const pointerY = useMotionValue(-100);
   const [isInside, setIsInside] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
-
-  // Active magnetic target
   const [activeTarget, setActiveTarget] = useState<TargetInfo | null>(null);
 
-  // Spring physics for pointer follower
-  const springX = useSpring(pointerX, { stiffness: 1000, damping: 80 });
-  const springY = useSpring(pointerY, { stiffness: 1000, damping: 80 });
+  // Track active target ID to ensure transitions ONLY trigger once on state changes,
+  // preventing constant animation restarts on every mousemove frame
+  const currentTargetIdRef = useRef<string | null>(null);
 
-  // Cursor dimensions
-  const cursorWidth = useMotionValue(18);
-  const cursorHeight = useMotionValue(18);
-  const cursorRadius = useMotionValue(999);
-  const cursorScale = useMotionValue(1);
+  // Raw mouse coordinates relative to container
+  const pointerX = useMotionValue(0);
+  const pointerY = useMotionValue(0);
 
-  // Magnetic displacement of the active button's label
-  const labelOffsetX = useMotionValue(0);
-  const labelOffsetY = useMotionValue(0);
+  // Snapped target center coordinates relative to container
+  const targetCenterX = useMotionValue(0);
+  const targetCenterY = useMotionValue(0);
 
-  // Target registration and magnetic check
-  const checkTargetUnderPointer = useCallback(
-    (clientX: number, clientY: number) => {
-      if (!containerRef.current) return null;
+  // Magnetic weight (0 = free dot following mouse 1:1, 0.8 = snapped with 20% drag resistance)
+  const snapWeight = useMotionValue(0);
 
-      const interactiveElements = containerRef.current.querySelectorAll<HTMLElement>(
-        'button, [data-cursor="pointer"]'
-      );
+  // Cursor dimensions (17px free dot, rect.width + 10 / rect.height + 10 when snapped)
+  const cursorWidth = useMotionValue(DEFAULT_CURSOR_SIZE);
+  const cursorHeight = useMotionValue(DEFAULT_CURSOR_SIZE);
 
-      for (const el of Array.from(interactiveElements)) {
-        const rect = el.getBoundingClientRect();
-        // Generous magnetic activation threshold (padding of 12px)
-        const threshold = 12;
-        if (
-          clientX >= rect.left - threshold &&
-          clientX <= rect.right + threshold &&
-          clientY >= rect.top - threshold &&
-          clientY <= rect.bottom + threshold
-        ) {
-          const computed = window.getComputedStyle(el);
-          const rawRadius = parseInt(computed.borderRadius, 10);
-          return {
-            element: el,
-            rect,
-            borderRadius: isNaN(rawRadius) ? 10 : Math.max(rawRadius, 8),
-          };
-        }
+  // Computed cursor position via transform interpolation
+  const cursorX = useTransform(() => {
+    const px = pointerX.get();
+    const tx = targetCenterX.get();
+    const w = snapWeight.get();
+    return px + (tx - px) * w;
+  });
+
+  const cursorY = useTransform(() => {
+    const py = pointerY.get();
+    const ty = targetCenterY.get();
+    const w = snapWeight.get();
+    return py + (ty - py) * w;
+  });
+
+  // Per-target magnetic parallax pure motion values (id -> { x: MotionValue, y: MotionValue })
+  const targetsMap = useRef<Map<string, { x: MotionValue<number>; y: MotionValue<number> }>>(new Map());
+
+  const getTargetMotion = useCallback((id: string) => {
+    let entry = targetsMap.current.get(id);
+    if (!entry) {
+      entry = {
+        x: motionValue(0),
+        y: motionValue(0),
+      };
+      targetsMap.current.set(id, entry);
+    }
+    return entry;
+  }, []);
+
+  // Fast, accurate target detection
+  const checkTargetUnderPointer = useCallback((clientX: number, clientY: number): TargetInfo | null => {
+    const container = containerRef.current;
+    if (!container) return null;
+
+    const interactiveElements = container.querySelectorAll<HTMLElement>(
+      'button, [data-cursor="pointer"]'
+    );
+
+    const threshold = 4; // Tight, instant proximity activation
+    for (const el of Array.from(interactiveElements)) {
+      const rect = el.getBoundingClientRect();
+      if (
+        clientX >= rect.left - threshold &&
+        clientX <= rect.right + threshold &&
+        clientY >= rect.top - threshold &&
+        clientY <= rect.bottom + threshold
+      ) {
+        const id = el.getAttribute('data-pointer-id') || el.innerText || 'target';
+        return { id, element: el, rect };
       }
-      return null;
-    },
-    []
-  );
+    }
+    return null;
+  }, []);
 
-  // Handle pointer movement within container
+  // Handle pointer move
   const handlePointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
       const container = containerRef.current;
       if (!container) return;
 
-      if (!isInside) setIsInside(true);
-
       const cRect = container.getBoundingClientRect();
       const localX = e.clientX - cRect.left;
       const localY = e.clientY - cRect.top;
 
-      pointerX.set(localX);
-      pointerY.set(localY);
+      if (!isInside) {
+        pointerX.jump(localX);
+        pointerY.jump(localY);
+        setIsInside(true);
+      } else {
+        pointerX.set(localX);
+        pointerY.set(localY);
+      }
 
       const target = checkTargetUnderPointer(e.clientX, e.clientY);
-      setActiveTarget(target);
+      const targetId = target ? target.id : null;
 
-      if (target) {
+      // CRITICAL: Only trigger shape & snap animations when the target actually changes!
+      // Calling animate() on every single mousemove cancels and restarts the 150ms ease,
+      // which previously caused the sluggish morphing reported by the user.
+      if (targetId !== currentTargetIdRef.current) {
+        currentTargetIdRef.current = targetId;
+        setActiveTarget(target);
+
+        if (target) {
+          const rect = target.rect;
+          const cX = rect.left - cRect.left + rect.width / 2;
+          const cY = rect.top - cRect.top + rect.height / 2;
+
+          targetCenterX.set(cX);
+          targetCenterY.set(cY);
+
+          const targetW = rect.width + PADDING * 2;
+          const targetH = rect.height + PADDING * 2;
+
+          animate(cursorWidth, targetW, SNAP_TRANSITION);
+          animate(cursorHeight, targetH, SNAP_TRANSITION);
+          animate(snapWeight, 0.8, SNAP_TRANSITION);
+        } else {
+          // Instant return to 17px circle
+          animate(cursorWidth, DEFAULT_CURSOR_SIZE, SNAP_TRANSITION);
+          animate(cursorHeight, DEFAULT_CURSOR_SIZE, SNAP_TRANSITION);
+          animate(snapWeight, 0, SNAP_TRANSITION);
+
+          targetsMap.current.forEach((tMotion) => {
+            if (tMotion.x.get() !== 0 || tMotion.y.get() !== 0) {
+              animate(tMotion.x, 0, SNAP_TRANSITION);
+              animate(tMotion.y, 0, SNAP_TRANSITION);
+            }
+          });
+        }
+      } else if (target) {
+        // Target is already active: continuously track position & calculate magnetic parallax
         const rect = target.rect;
-        const targetCenterX = rect.left - cRect.left + rect.width / 2;
-        const targetCenterY = rect.top - cRect.top + rect.height / 2;
+        const cX = rect.left - cRect.left + rect.width / 2;
+        const cY = rect.top - cRect.top + rect.height / 2;
 
-        // Snapped dimensions with padding (5px on each side)
-        const targetW = rect.width + 10;
-        const targetH = rect.height + 10;
-        const targetR = target.borderRadius + 2;
+        targetCenterX.set(cX);
+        targetCenterY.set(cY);
 
-        animate(cursorWidth, targetW, { type: 'spring', stiffness: 600, damping: 45 });
-        animate(cursorHeight, targetH, { type: 'spring', stiffness: 600, damping: 45 });
-        animate(cursorRadius, targetR, { type: 'spring', stiffness: 600, damping: 45 });
-
-        // Magnetic resistance drag on cursor center (snap factor 0.8)
-        const dx = localX - targetCenterX;
-        const dy = localY - targetCenterY;
-        const magneticCursorX = targetCenterX + 0.2 * dx;
-        const magneticCursorY = targetCenterY + 0.2 * dy;
-
-        springX.set(magneticCursorX);
-        springY.set(magneticCursorY);
-
-        // Magnetic pull on button text
+        const dx = localX - cX;
+        const dy = localY - cY;
         const pullX = magneticStrength * dx;
         const pullY = magneticStrength * dy;
-        animate(labelOffsetX, pullX, { duration: 0.1, ease: 'easeOut' });
-        animate(labelOffsetY, pullY, { duration: 0.1, ease: 'easeOut' });
-      } else {
-        // Free-floating dot
-        animate(cursorWidth, 18, { type: 'spring', stiffness: 600, damping: 45 });
-        animate(cursorHeight, 18, { type: 'spring', stiffness: 600, damping: 45 });
-        animate(cursorRadius, 999, { type: 'spring', stiffness: 600, damping: 45 });
 
-        springX.set(localX);
-        springY.set(localY);
-
-        // Reset label offset
-        animate(labelOffsetX, 0, { type: 'spring', stiffness: 600, damping: 40 });
-        animate(labelOffsetY, 0, { type: 'spring', stiffness: 600, damping: 40 });
+        const activeMotion = targetsMap.current.get(target.id);
+        if (activeMotion) {
+          activeMotion.x.set(pullX);
+          activeMotion.y.set(pullY);
+        }
       }
     },
     [
       isInside,
       pointerX,
       pointerY,
-      checkTargetUnderPointer,
+      targetCenterX,
+      targetCenterY,
       cursorWidth,
       cursorHeight,
-      cursorRadius,
-      springX,
-      springY,
+      snapWeight,
+      checkTargetUnderPointer,
       magneticStrength,
-      labelOffsetX,
-      labelOffsetY,
     ]
   );
 
-  const handlePointerEnter = () => {
+  const handlePointerEnter = (e: React.PointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {
+    if (containerRef.current) {
+      const cRect = containerRef.current.getBoundingClientRect();
+      pointerX.jump(e.clientX - cRect.left);
+      pointerY.jump(e.clientY - cRect.top);
+    }
     setIsInside(true);
   };
 
   const handlePointerLeave = () => {
     setIsInside(false);
     setActiveTarget(null);
-    animate(labelOffsetX, 0, { type: 'spring', stiffness: 600, damping: 40 });
-    animate(labelOffsetY, 0, { type: 'spring', stiffness: 600, damping: 40 });
+    currentTargetIdRef.current = null;
+    cursorWidth.set(DEFAULT_CURSOR_SIZE);
+    cursorHeight.set(DEFAULT_CURSOR_SIZE);
+    snapWeight.set(0);
+    targetsMap.current.forEach((tMotion) => {
+      tMotion.x.set(0);
+      tMotion.y.set(0);
+    });
   };
 
   const handlePointerDown = () => {
     setIsPressed(true);
-    animate(cursorScale, 0.92, { duration: 0.1 });
   };
 
   const handlePointerUp = () => {
     setIsPressed(false);
-    animate(cursorScale, 1, { type: 'spring', stiffness: 500, damping: 25 });
   };
 
   // Keep target rect updated on window resize or scroll
   useEffect(() => {
     const handleScrollOrResize = () => {
-      if (activeTarget && activeTarget.element) {
+      if (activeTarget && activeTarget.element && containerRef.current) {
         const updatedRect = activeTarget.element.getBoundingClientRect();
+        const cRect = containerRef.current.getBoundingClientRect();
         setActiveTarget((prev) => (prev ? { ...prev, rect: updatedRect } : null));
+        targetCenterX.set(updatedRect.left - cRect.left + updatedRect.width / 2);
+        targetCenterY.set(updatedRect.top - cRect.top + updatedRect.height / 2);
       }
     };
     window.addEventListener('scroll', handleScrollOrResize, { passive: true });
@@ -291,7 +347,7 @@ export const IosPointer: React.FC<IosPointerProps> = ({
       window.removeEventListener('scroll', handleScrollOrResize);
       window.removeEventListener('resize', handleScrollOrResize);
     };
-  }, [activeTarget]);
+  }, [activeTarget, targetCenterX, targetCenterY]);
 
   return (
     <div
@@ -314,16 +370,18 @@ export const IosPointer: React.FC<IosPointerProps> = ({
         {mode === 'single' && (
           <motion.button
             ref={primaryButtonRef}
+            data-pointer-id="single-appearance"
             className={styles.button}
-            whileTap={{ scale: 0.95 }}
+            whileTap="pressed"
             type="button"
             data-cursor="pointer"
           >
             <motion.span
               className={styles.buttonLabel}
+              variants={{ pressed: { scale: 0.95 } }}
               style={{
-                x: labelOffsetX,
-                y: labelOffsetY,
+                x: getTargetMotion('single-appearance').x,
+                y: getTargetMotion('single-appearance').y,
               }}
             >
               <ChevronLeft />
@@ -336,17 +394,19 @@ export const IosPointer: React.FC<IosPointerProps> = ({
           <div className={styles.navBar}>
             <motion.button
               ref={primaryButtonRef}
+              data-pointer-id="nav-appearance"
               className={styles.button}
               style={{ fontSize: 18, padding: '4px 8px' }}
-              whileTap={{ scale: 0.95 }}
+              whileTap="pressed"
               type="button"
               data-cursor="pointer"
             >
               <motion.span
                 className={styles.buttonLabel}
+                variants={{ pressed: { scale: 0.95 } }}
                 style={{
-                  x: labelOffsetX,
-                  y: labelOffsetY,
+                  x: getTargetMotion('nav-appearance').x,
+                  y: getTargetMotion('nav-appearance').y,
                 }}
               >
                 <ChevronLeft />
@@ -356,32 +416,63 @@ export const IosPointer: React.FC<IosPointerProps> = ({
 
             <div className={styles.navItems}>
               <motion.button
+                data-pointer-id="nav-share"
                 className={styles.iconButton}
-                whileTap={{ scale: 0.95 }}
+                whileTap="pressed"
                 type="button"
                 data-cursor="pointer"
                 aria-label="Share"
               >
-                <ShareIcon />
+                <motion.span
+                  className={styles.iconWrapper}
+                  variants={{ pressed: { scale: 0.95 } }}
+                  style={{
+                    x: getTargetMotion('nav-share').x,
+                    y: getTargetMotion('nav-share').y,
+                  }}
+                >
+                  <ShareIcon />
+                </motion.span>
               </motion.button>
 
               <motion.button
+                data-pointer-id="nav-settings"
                 className={styles.iconButton}
-                whileTap={{ scale: 0.95 }}
+                whileTap="pressed"
                 type="button"
                 data-cursor="pointer"
                 aria-label="Settings"
               >
-                <SettingsIcon />
+                <motion.span
+                  className={styles.iconWrapper}
+                  variants={{ pressed: { scale: 0.95 } }}
+                  style={{
+                    x: getTargetMotion('nav-settings').x,
+                    y: getTargetMotion('nav-settings').y,
+                  }}
+                >
+                  <SettingsIcon />
+                </motion.span>
               </motion.button>
 
               <motion.button
+                data-pointer-id="nav-done"
                 className={styles.pillButton}
-                whileTap={{ scale: 0.95 }}
+                whileTap="pressed"
                 type="button"
                 data-cursor="pointer"
               >
-                Done
+                <motion.span
+                  variants={{ pressed: { scale: 0.95 } }}
+                  style={{
+                    display: 'inline-block',
+                    willChange: 'transform',
+                    x: getTargetMotion('nav-done').x,
+                    y: getTargetMotion('nav-done').y,
+                  }}
+                >
+                  Done
+                </motion.span>
               </motion.button>
             </div>
           </div>
@@ -391,16 +482,18 @@ export const IosPointer: React.FC<IosPointerProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>
             <motion.button
               ref={primaryButtonRef}
+              data-pointer-id="seg-appearance"
               className={styles.button}
-              whileTap={{ scale: 0.95 }}
+              whileTap="pressed"
               type="button"
               data-cursor="pointer"
             >
               <motion.span
                 className={styles.buttonLabel}
+                variants={{ pressed: { scale: 0.95 } }}
                 style={{
-                  x: labelOffsetX,
-                  y: labelOffsetY,
+                  x: getTargetMotion('seg-appearance').x,
+                  y: getTargetMotion('seg-appearance').y,
                 }}
               >
                 <ChevronLeft />
@@ -417,24 +510,34 @@ export const IosPointer: React.FC<IosPointerProps> = ({
                 borderRadius: 12,
               }}
             >
-              {['Display', 'Sounds', 'Haptics'].map((item) => (
-                <motion.button
-                  key={item}
-                  className={styles.pillButton}
-                  whileTap={{ scale: 0.95 }}
-                  type="button"
-                  data-cursor="pointer"
-                >
-                  {item}
-                </motion.button>
-              ))}
+              {['Display', 'Sounds', 'Haptics'].map((item) => {
+                const segId = `seg-item-${item.toLowerCase()}`;
+                return (
+                  <motion.button
+                    key={item}
+                    data-pointer-id={segId}
+                    className={styles.pillButton}
+                    whileTap="pressed"
+                    type="button"
+                    data-cursor="pointer"
+                  >
+                    <motion.span
+                      variants={{ pressed: { scale: 0.95 } }}
+                      style={{
+                        display: 'inline-block',
+                        willChange: 'transform',
+                        x: getTargetMotion(segId).x,
+                        y: getTargetMotion(segId).y,
+                      }}
+                    >
+                      {item}
+                    </motion.span>
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
         )}
-
-        <div className={styles.hint}>
-          Hover near the button to experience authentic iPadOS / iOS magnetic snapping & parallax
-        </div>
       </div>
 
       {/* Floating / Morphed iOS Pointer */}
@@ -442,22 +545,20 @@ export const IosPointer: React.FC<IosPointerProps> = ({
         {isInside && (
           <motion.div
             className={`${styles.cursor} ${activeTarget ? styles.cursorSnapped : ''}`}
-            initial={{ opacity: 0, scale: 0.5 }}
+            initial={{ opacity: 0, scale: 1 }}
             animate={{
               opacity: 1,
-              scale: isPressed ? 0.93 : 1,
+              scale: isPressed ? 0.9 : 1,
             }}
-            exit={{ opacity: 0, scale: 0.5 }}
+            exit={{ opacity: 0, scale: 0 }}
             transition={{ duration: 0.15 }}
-            transformTemplate={({ x, y, scale }) =>
-              `translate(-50%, -50%) translate3d(${x}, ${y}, 0) scale(${scale || 1})`
-            }
+            transformTemplate={(_props, generated) => `translate(-50%, -50%) ${generated}`}
             style={{
-              x: springX,
-              y: springY,
+              x: cursorX,
+              y: cursorY,
               width: cursorWidth,
               height: cursorHeight,
-              borderRadius: cursorRadius,
+              borderRadius: 10,
             }}
           />
         )}
@@ -465,4 +566,5 @@ export const IosPointer: React.FC<IosPointerProps> = ({
     </div>
   );
 };
+
 export default IosPointer;
