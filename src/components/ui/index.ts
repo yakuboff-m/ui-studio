@@ -20,3 +20,4 @@ export * from './FooterReveal';
 export * from './Typewriter';
 export * from './UserButton';
 export * from './IosPointer';
+export * from './MultiStateBadge';

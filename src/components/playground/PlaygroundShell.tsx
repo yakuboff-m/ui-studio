@@ -50,6 +50,7 @@ import {
   Typewriter,
   UserButton,
   IosPointer,
+  MultiStateBadge,
 } from '@/components/ui';
 
 
@@ -98,6 +99,8 @@ import {
   FULL_USER_BUTTON_SCSS,
   FULL_IOS_POINTER_TSX,
   FULL_IOS_POINTER_SCSS,
+  FULL_MULTI_STATE_BADGE_TSX,
+  FULL_MULTI_STATE_BADGE_SCSS,
 } from './componentSources';
 
 
@@ -196,6 +199,47 @@ const SKIPER96_ITEMS = [
 ];
 
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'multi-state-badge',
+    name: 'Multi-State Badge',
+    category: 'Feedback',
+    description: 'Motion.dev "Multi-state badge" — animated status pill with SVG path drawing, rotating spinner, blur-fade text transitions, and shake/bounce feedback.',
+    controls: [
+      { name: 'state', type: 'select', defaultValue: 'cycle (interactive)', options: ['cycle (interactive)', 'idle', 'processing', 'success', 'error'] },
+      { name: 'interactive', type: 'boolean', defaultValue: true },
+      { name: 'idleLabel', type: 'text', defaultValue: 'Start' },
+      { name: 'processingLabel', type: 'text', defaultValue: 'Processing' },
+      { name: 'successLabel', type: 'text', defaultValue: 'Done' },
+      { name: 'errorLabel', type: 'text', defaultValue: 'Something went wrong' },
+    ],
+    render: (props) => {
+      const isCycle = props.state === 'cycle (interactive)';
+      return (
+        <Box sx={{ width: '100%', minHeight: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+          <MultiStateBadge
+            state={isCycle ? undefined : (props.state as 'idle' | 'processing' | 'success' | 'error')}
+            interactive={props.interactive !== false}
+            labels={{
+              idle: String(props.idleLabel || 'Start'),
+              processing: String(props.processingLabel || 'Processing'),
+              success: String(props.successLabel || 'Done'),
+              error: String(props.errorLabel || 'Something went wrong'),
+            }}
+          />
+          <Typography variant="caption" sx={{ color: 'text.secondary', opacity: 0.7, letterSpacing: '0.02em', userSelect: 'none' }}>
+            {isCycle ? '💡 Click the badge above to cycle: Start → Processing → Done → Error' : `Controlled mode: "${props.state}"`}
+          </Typography>
+        </Box>
+      );
+    },
+    generateCode: (props) => {
+      const isCycle = props.state === 'cycle (interactive)';
+      const stateProp = isCycle ? '' : `\\n      state="${props.state}"`;
+      return `import React from 'react';\\nimport { MultiStateBadge } from '@/components/ui/MultiStateBadge';\\n\\nexport function MultiStateBadgeDemo() {\\n  return (\\n    <MultiStateBadge${stateProp}\\n      interactive={${props.interactive !== false}}\\n      labels={{\\n        idle: '${props.idleLabel || 'Start'}',\\n        processing: '${props.processingLabel || 'Processing'}',\\n        success: '${props.successLabel || 'Done'}',\\n        error: '${props.errorLabel || 'Something went wrong'}',\\n      }}\\n    />\\n  );\\n}`;
+    },
+    sourceCode: FULL_MULTI_STATE_BADGE_TSX,
+    scssCode: FULL_MULTI_STATE_BADGE_SCSS,
+  },
   {
     id: 'ios-pointer',
     name: 'iOS Pointer Animation',

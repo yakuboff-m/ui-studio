@@ -1,0 +1,103 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  min-height: 80px;
+  position: relative;
+}
+
+.badgeButton {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: normal;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.7);
+    outline-offset: 4px;
+    border-radius: 999px;
+  }
+}
+
+.badge {
+  background-color: #ffffff;
+  color: #0b1012;
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 999px;
+  will-change: transform, filter;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+
+  :global([data-theme='light']) & {
+    background-color: #0f172a;
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  }
+}
+
+.iconContainer {
+  height: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.textMeasure {
+  position: absolute;
+  visibility: hidden;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  pointer-events: none;
+}
+
+.textContainer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+}
+
+.textItem {
+  white-space: nowrap;
+  text-overflow: clip;
+}

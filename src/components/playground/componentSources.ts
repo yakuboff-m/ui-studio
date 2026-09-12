@@ -6206,3 +6206,435 @@ export const FULL_USER_BUTTON_SCSS = `/*
 export const FULL_IOS_POINTER_TSX = "'use client';\n\nimport React, { useCallback, useEffect, useRef, useState } from 'react';\nimport {\n  AnimatePresence,\n  animate,\n  motion,\n  motionValue,\n  useMotionValue,\n  useTransform,\n  type MotionValue,\n} from 'framer-motion';\nimport styles from './IosPointer.module.scss';\n\nexport interface IosPointerProps {\n  /** Text label on the primary iOS button (default: \"Appearance\") */\n  label?: string;\n  /** Demo presentation mode: 'single' | 'navbar' | 'segmented' */\n  mode?: 'single' | 'navbar' | 'segmented';\n  /** Theme: 'dark' | 'light' | 'auto' */\n  theme?: 'dark' | 'light' | 'auto';\n  /** Magnetic text pull factor (default: 0.1) */\n  magneticStrength?: number;\n  className?: string;\n  style?: React.CSSProperties;\n}\n\ninterface TargetInfo {\n  id: string;\n  element: HTMLElement;\n  rect: DOMRect;\n}\n\n// Exact Motion.dev constants\nconst DEFAULT_CURSOR_SIZE = 17;\nconst PADDING = 5; // 5px padding on each side -> +10px total\nconst SNAP_TRANSITION = { duration: 0.15, ease: [0.38, 0.12, 0.29, 1] } as const;\n\n// Chevron Icon exact SVG from Motion.dev\nfunction ChevronLeft() {\n  return (\n    <svg\n      className={styles.chevronIcon}\n      width=\"12\"\n      height=\"20\"\n      viewBox=\"0 0 12 20\"\n      fill=\"none\"\n      xmlns=\"http://www.w3.org/2000/svg\"\n      aria-hidden=\"true\"\n    >\n      <path\n        d=\"M10 2L2 10L10 18\"\n        stroke=\"currentColor\"\n        strokeWidth=\"2\"\n        strokeLinecap=\"round\"\n        strokeLinejoin=\"round\"\n      />\n    </svg>\n  );\n}\n\n// Gear Icon for navbar mode\nfunction SettingsIcon() {\n  return (\n    <svg\n      width=\"20\"\n      height=\"20\"\n      viewBox=\"0 0 24 24\"\n      fill=\"none\"\n      stroke=\"currentColor\"\n      strokeWidth=\"2\"\n      strokeLinecap=\"round\"\n      strokeLinejoin=\"round\"\n      aria-hidden=\"true\"\n    >\n      <circle cx=\"12\" cy=\"12\" r=\"3\" />\n      <path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z\" />\n    </svg>\n  );\n}\n\n// Share Icon\nfunction ShareIcon() {\n  return (\n    <svg\n      width=\"20\"\n      height=\"20\"\n      viewBox=\"0 0 24 24\"\n      fill=\"none\"\n      stroke=\"currentColor\"\n      strokeWidth=\"2\"\n      strokeLinecap=\"round\"\n      strokeLinejoin=\"round\"\n      aria-hidden=\"true\"\n    >\n      <path d=\"M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8\" />\n      <polyline points=\"16 6 12 2 8 6\" />\n      <line x1=\"12\" y1=\"2\" x2=\"12\" y2=\"15\" />\n    </svg>\n  );\n}\n\nexport const IosPointer: React.FC<IosPointerProps> = ({\n  label = 'Appearance',\n  mode = 'single',\n  theme = 'auto',\n  magneticStrength = 0.1,\n  className,\n  style,\n}) => {\n  const containerRef = useRef<HTMLDivElement>(null);\n  const primaryButtonRef = useRef<HTMLButtonElement>(null);\n\n  // Theme management\n  const [autoTheme, setAutoTheme] = useState<'dark' | 'light'>('dark');\n\n  useEffect(() => {\n    if (theme !== 'auto') return;\n    const checkTheme = () => {\n      const docTheme = document.documentElement.getAttribute('data-theme');\n      setAutoTheme(docTheme === 'light' ? 'light' : 'dark');\n    };\n    checkTheme();\n    const observer = new MutationObserver(checkTheme);\n    observer.observe(document.documentElement, {\n      attributes: true,\n      attributeFilter: ['data-theme'],\n    });\n    return () => observer.disconnect();\n  }, [theme]);\n\n  const activeTheme = theme === 'auto' ? autoTheme : theme;\n\n  const [isInside, setIsInside] = useState(false);\n  const [isPressed, setIsPressed] = useState(false);\n  const [activeTarget, setActiveTarget] = useState<TargetInfo | null>(null);\n\n  // Track active target ID to ensure transitions ONLY trigger once on state changes,\n  // preventing constant animation restarts on every mousemove frame\n  const currentTargetIdRef = useRef<string | null>(null);\n\n  // Raw mouse coordinates relative to container\n  const pointerX = useMotionValue(0);\n  const pointerY = useMotionValue(0);\n\n  // Snapped target center coordinates relative to container\n  const targetCenterX = useMotionValue(0);\n  const targetCenterY = useMotionValue(0);\n\n  // Magnetic weight (0 = free dot following mouse 1:1, 0.8 = snapped with 20% drag resistance)\n  const snapWeight = useMotionValue(0);\n\n  // Cursor dimensions (17px free dot, rect.width + 10 / rect.height + 10 when snapped)\n  const cursorWidth = useMotionValue(DEFAULT_CURSOR_SIZE);\n  const cursorHeight = useMotionValue(DEFAULT_CURSOR_SIZE);\n\n  // Computed cursor position via transform interpolation\n  const cursorX = useTransform(() => {\n    const px = pointerX.get();\n    const tx = targetCenterX.get();\n    const w = snapWeight.get();\n    return px + (tx - px) * w;\n  });\n\n  const cursorY = useTransform(() => {\n    const py = pointerY.get();\n    const ty = targetCenterY.get();\n    const w = snapWeight.get();\n    return py + (ty - py) * w;\n  });\n\n  // Per-target magnetic parallax pure motion values (id -> { x: MotionValue, y: MotionValue })\n  const targetsMap = useRef<Map<string, { x: MotionValue<number>; y: MotionValue<number> }>>(new Map());\n\n  const getTargetMotion = useCallback((id: string) => {\n    let entry = targetsMap.current.get(id);\n    if (!entry) {\n      entry = {\n        x: motionValue(0),\n        y: motionValue(0),\n      };\n      targetsMap.current.set(id, entry);\n    }\n    return entry;\n  }, []);\n\n  // Fast, accurate target detection\n  const checkTargetUnderPointer = useCallback((clientX: number, clientY: number): TargetInfo | null => {\n    const container = containerRef.current;\n    if (!container) return null;\n\n    const interactiveElements = container.querySelectorAll<HTMLElement>(\n      'button, [data-cursor=\"pointer\"]'\n    );\n\n    const threshold = 4; // Tight, instant proximity activation\n    for (const el of Array.from(interactiveElements)) {\n      const rect = el.getBoundingClientRect();\n      if (\n        clientX >= rect.left - threshold &&\n        clientX <= rect.right + threshold &&\n        clientY >= rect.top - threshold &&\n        clientY <= rect.bottom + threshold\n      ) {\n        const id = el.getAttribute('data-pointer-id') || el.innerText || 'target';\n        return { id, element: el, rect };\n      }\n    }\n    return null;\n  }, []);\n\n  // Handle pointer move\n  const handlePointerMove = useCallback(\n    (e: React.PointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {\n      const container = containerRef.current;\n      if (!container) return;\n\n      const cRect = container.getBoundingClientRect();\n      const localX = e.clientX - cRect.left;\n      const localY = e.clientY - cRect.top;\n\n      if (!isInside) {\n        pointerX.jump(localX);\n        pointerY.jump(localY);\n        setIsInside(true);\n      } else {\n        pointerX.set(localX);\n        pointerY.set(localY);\n      }\n\n      const target = checkTargetUnderPointer(e.clientX, e.clientY);\n      const targetId = target ? target.id : null;\n\n      // CRITICAL: Only trigger shape & snap animations when the target actually changes!\n      // Calling animate() on every single mousemove cancels and restarts the 150ms ease,\n      // which previously caused the sluggish morphing reported by the user.\n      if (targetId !== currentTargetIdRef.current) {\n        currentTargetIdRef.current = targetId;\n        setActiveTarget(target);\n\n        if (target) {\n          const rect = target.rect;\n          const cX = rect.left - cRect.left + rect.width / 2;\n          const cY = rect.top - cRect.top + rect.height / 2;\n\n          targetCenterX.set(cX);\n          targetCenterY.set(cY);\n\n          const targetW = rect.width + PADDING * 2;\n          const targetH = rect.height + PADDING * 2;\n\n          animate(cursorWidth, targetW, SNAP_TRANSITION);\n          animate(cursorHeight, targetH, SNAP_TRANSITION);\n          animate(snapWeight, 0.8, SNAP_TRANSITION);\n        } else {\n          // Instant return to 17px circle\n          animate(cursorWidth, DEFAULT_CURSOR_SIZE, SNAP_TRANSITION);\n          animate(cursorHeight, DEFAULT_CURSOR_SIZE, SNAP_TRANSITION);\n          animate(snapWeight, 0, SNAP_TRANSITION);\n\n          targetsMap.current.forEach((tMotion) => {\n            if (tMotion.x.get() !== 0 || tMotion.y.get() !== 0) {\n              animate(tMotion.x, 0, SNAP_TRANSITION);\n              animate(tMotion.y, 0, SNAP_TRANSITION);\n            }\n          });\n        }\n      } else if (target) {\n        // Target is already active: continuously track position & calculate magnetic parallax\n        const rect = target.rect;\n        const cX = rect.left - cRect.left + rect.width / 2;\n        const cY = rect.top - cRect.top + rect.height / 2;\n\n        targetCenterX.set(cX);\n        targetCenterY.set(cY);\n\n        const dx = localX - cX;\n        const dy = localY - cY;\n        const pullX = magneticStrength * dx;\n        const pullY = magneticStrength * dy;\n\n        const activeMotion = targetsMap.current.get(target.id);\n        if (activeMotion) {\n          activeMotion.x.set(pullX);\n          activeMotion.y.set(pullY);\n        }\n      }\n    },\n    [\n      isInside,\n      pointerX,\n      pointerY,\n      targetCenterX,\n      targetCenterY,\n      cursorWidth,\n      cursorHeight,\n      snapWeight,\n      checkTargetUnderPointer,\n      magneticStrength,\n    ]\n  );\n\n  const handlePointerEnter = (e: React.PointerEvent<HTMLDivElement> | React.MouseEvent<HTMLDivElement>) => {\n    if (containerRef.current) {\n      const cRect = containerRef.current.getBoundingClientRect();\n      pointerX.jump(e.clientX - cRect.left);\n      pointerY.jump(e.clientY - cRect.top);\n    }\n    setIsInside(true);\n  };\n\n  const handlePointerLeave = () => {\n    setIsInside(false);\n    setActiveTarget(null);\n    currentTargetIdRef.current = null;\n    cursorWidth.set(DEFAULT_CURSOR_SIZE);\n    cursorHeight.set(DEFAULT_CURSOR_SIZE);\n    snapWeight.set(0);\n    targetsMap.current.forEach((tMotion) => {\n      tMotion.x.set(0);\n      tMotion.y.set(0);\n    });\n  };\n\n  const handlePointerDown = () => {\n    setIsPressed(true);\n  };\n\n  const handlePointerUp = () => {\n    setIsPressed(false);\n  };\n\n  // Keep target rect updated on window resize or scroll\n  useEffect(() => {\n    const handleScrollOrResize = () => {\n      if (activeTarget && activeTarget.element && containerRef.current) {\n        const updatedRect = activeTarget.element.getBoundingClientRect();\n        const cRect = containerRef.current.getBoundingClientRect();\n        setActiveTarget((prev) => (prev ? { ...prev, rect: updatedRect } : null));\n        targetCenterX.set(updatedRect.left - cRect.left + updatedRect.width / 2);\n        targetCenterY.set(updatedRect.top - cRect.top + updatedRect.height / 2);\n      }\n    };\n    window.addEventListener('scroll', handleScrollOrResize, { passive: true });\n    window.addEventListener('resize', handleScrollOrResize, { passive: true });\n    return () => {\n      window.removeEventListener('scroll', handleScrollOrResize);\n      window.removeEventListener('resize', handleScrollOrResize);\n    };\n  }, [activeTarget, targetCenterX, targetCenterY]);\n\n  return (\n    <div\n      ref={containerRef}\n      className={`${styles.wrapper} ${className || ''}`}\n      data-theme={activeTheme}\n      style={style}\n      onPointerMove={handlePointerMove}\n      onMouseMove={handlePointerMove}\n      onPointerEnter={handlePointerEnter}\n      onMouseEnter={handlePointerEnter}\n      onPointerLeave={handlePointerLeave}\n      onMouseLeave={handlePointerLeave}\n      onPointerDown={handlePointerDown}\n      onMouseDown={handlePointerDown}\n      onPointerUp={handlePointerUp}\n      onMouseUp={handlePointerUp}\n    >\n      <div className={styles.container}>\n        {mode === 'single' && (\n          <motion.button\n            ref={primaryButtonRef}\n            data-pointer-id=\"single-appearance\"\n            className={styles.button}\n            whileTap=\"pressed\"\n            type=\"button\"\n            data-cursor=\"pointer\"\n          >\n            <motion.span\n              className={styles.buttonLabel}\n              variants={{ pressed: { scale: 0.95 } }}\n              style={{\n                x: getTargetMotion('single-appearance').x,\n                y: getTargetMotion('single-appearance').y,\n              }}\n            >\n              <ChevronLeft />\n              <span>{label}</span>\n            </motion.span>\n          </motion.button>\n        )}\n\n        {mode === 'navbar' && (\n          <div className={styles.navBar}>\n            <motion.button\n              ref={primaryButtonRef}\n              data-pointer-id=\"nav-appearance\"\n              className={styles.button}\n              style={{ fontSize: 18, padding: '4px 8px' }}\n              whileTap=\"pressed\"\n              type=\"button\"\n              data-cursor=\"pointer\"\n            >\n              <motion.span\n                className={styles.buttonLabel}\n                variants={{ pressed: { scale: 0.95 } }}\n                style={{\n                  x: getTargetMotion('nav-appearance').x,\n                  y: getTargetMotion('nav-appearance').y,\n                }}\n              >\n                <ChevronLeft />\n                <span>{label}</span>\n              </motion.span>\n            </motion.button>\n\n            <div className={styles.navItems}>\n              <motion.button\n                data-pointer-id=\"nav-share\"\n                className={styles.iconButton}\n                whileTap=\"pressed\"\n                type=\"button\"\n                data-cursor=\"pointer\"\n                aria-label=\"Share\"\n              >\n                <motion.span\n                  className={styles.iconWrapper}\n                  variants={{ pressed: { scale: 0.95 } }}\n                  style={{\n                    x: getTargetMotion('nav-share').x,\n                    y: getTargetMotion('nav-share').y,\n                  }}\n                >\n                  <ShareIcon />\n                </motion.span>\n              </motion.button>\n\n              <motion.button\n                data-pointer-id=\"nav-settings\"\n                className={styles.iconButton}\n                whileTap=\"pressed\"\n                type=\"button\"\n                data-cursor=\"pointer\"\n                aria-label=\"Settings\"\n              >\n                <motion.span\n                  className={styles.iconWrapper}\n                  variants={{ pressed: { scale: 0.95 } }}\n                  style={{\n                    x: getTargetMotion('nav-settings').x,\n                    y: getTargetMotion('nav-settings').y,\n                  }}\n                >\n                  <SettingsIcon />\n                </motion.span>\n              </motion.button>\n\n              <motion.button\n                data-pointer-id=\"nav-done\"\n                className={styles.pillButton}\n                whileTap=\"pressed\"\n                type=\"button\"\n                data-cursor=\"pointer\"\n              >\n                <motion.span\n                  variants={{ pressed: { scale: 0.95 } }}\n                  style={{\n                    display: 'inline-block',\n                    willChange: 'transform',\n                    x: getTargetMotion('nav-done').x,\n                    y: getTargetMotion('nav-done').y,\n                  }}\n                >\n                  Done\n                </motion.span>\n              </motion.button>\n            </div>\n          </div>\n        )}\n\n        {mode === 'segmented' && (\n          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24 }}>\n            <motion.button\n              ref={primaryButtonRef}\n              data-pointer-id=\"seg-appearance\"\n              className={styles.button}\n              whileTap=\"pressed\"\n              type=\"button\"\n              data-cursor=\"pointer\"\n            >\n              <motion.span\n                className={styles.buttonLabel}\n                variants={{ pressed: { scale: 0.95 } }}\n                style={{\n                  x: getTargetMotion('seg-appearance').x,\n                  y: getTargetMotion('seg-appearance').y,\n                }}\n              >\n                <ChevronLeft />\n                <span>{label}</span>\n              </motion.span>\n            </motion.button>\n\n            <div\n              style={{\n                display: 'inline-flex',\n                gap: 8,\n                padding: '6px',\n                background: activeTheme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',\n                borderRadius: 12,\n              }}\n            >\n              {['Display', 'Sounds', 'Haptics'].map((item) => {\n                const segId = `seg-item-${item.toLowerCase()}`;\n                return (\n                  <motion.button\n                    key={item}\n                    data-pointer-id={segId}\n                    className={styles.pillButton}\n                    whileTap=\"pressed\"\n                    type=\"button\"\n                    data-cursor=\"pointer\"\n                  >\n                    <motion.span\n                      variants={{ pressed: { scale: 0.95 } }}\n                      style={{\n                        display: 'inline-block',\n                        willChange: 'transform',\n                        x: getTargetMotion(segId).x,\n                        y: getTargetMotion(segId).y,\n                      }}\n                    >\n                      {item}\n                    </motion.span>\n                  </motion.button>\n                );\n              })}\n            </div>\n          </div>\n        )}\n      </div>\n\n      {/* Floating / Morphed iOS Pointer */}\n      <AnimatePresence>\n        {isInside && (\n          <motion.div\n            className={`${styles.cursor} ${activeTarget ? styles.cursorSnapped : ''}`}\n            initial={{ opacity: 0, scale: 1 }}\n            animate={{\n              opacity: 1,\n              scale: isPressed ? 0.9 : 1,\n            }}\n            exit={{ opacity: 0, scale: 0 }}\n            transition={{ duration: 0.15 }}\n            transformTemplate={(_props, generated) => `translate(-50%, -50%) ${generated}`}\n            style={{\n              x: cursorX,\n              y: cursorY,\n              width: cursorWidth,\n              height: cursorHeight,\n              borderRadius: 10,\n            }}\n          />\n        )}\n      </AnimatePresence>\n    </div>\n  );\n};\n\nexport default IosPointer;\n";
 
 export const FULL_IOS_POINTER_SCSS = "/*\n * IosPointer.module.scss\n * Motion.dev \"iOS Pointer Animation\" — Authentic iPadOS / iOS magnetic snapping cursor\n */\n\n.wrapper {\n  --text-blue: #0a84ff;\n  --cursor-default-bg: #7e7e7e;\n  --cursor-snapped-bg: #dddddd;\n  --cursor-blend: multiply;\n\n  position: relative;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  min-height: 380px;\n  background: transparent;\n  border: none;\n  border-radius: 0;\n  box-shadow: none;\n  overflow: hidden;\n  user-select: none;\n  font-family: -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"SF Pro Display\", \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n  cursor: none; // Hide native cursor within interactive preview\n  transition: none;\n\n  &, & * {\n    box-sizing: border-box;\n    cursor: none !important; // Hide standard cursor on all children inside stage\n  }\n\n  /* Dark Theme */\n  &[data-theme='dark'] {\n    --text-blue: #0a84ff;\n    --cursor-default-bg: rgba(255, 255, 255, 0.55);\n    --cursor-snapped-bg: rgba(255, 255, 255, 0.18);\n    --cursor-blend: screen;\n  }\n}\n\n/* ── Container Layout (Exact Motion.dev) ── */\n.container {\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 2rem;\n  width: 100%;\n  height: 100%;\n  padding: 2.5rem;\n  background: transparent;\n  pointer-events: auto;\n}\n\n/* ── iOS Primary Button (Motion.dev exact) ── */\n.button {\n  position: relative;\n  background: none;\n  padding: 8px;\n  color: var(--text-blue);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  border: none;\n  border-radius: 0;\n  outline: none;\n  user-select: none;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n  font-weight: 500;\n  font-size: 24px;\n  line-height: 1.2;\n  transition: opacity 0.15s ease;\n\n  &:focus-visible {\n    box-shadow: 0 0 0 2px var(--text-blue);\n  }\n}\n\n.buttonLabel {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  will-change: transform;\n}\n\n.chevronIcon {\n  display: inline-block;\n  flex-shrink: 0;\n  width: 12px;\n  height: 20px;\n}\n\n/* ── iOS Pointer Element (Exact Motion.dev: constant borderRadius 10px, 150ms cubic-bezier morph) ── */\n.cursor {\n  position: absolute;\n  top: 0;\n  left: 0;\n  pointer-events: none;\n  will-change: transform, width, height;\n  contain: layout;\n  z-index: 9999;\n  border-radius: 10px;\n  transform-origin: 50% 50%;\n  mix-blend-mode: var(--cursor-blend);\n  background-color: var(--cursor-default-bg);\n  transition: background-color 0.15s ease;\n}\n\n/* Snapped state styling */\n.cursorSnapped {\n  background-color: var(--cursor-snapped-bg);\n}\n\n/* ── Additional iOS Navigation Demo Items (for navbar/segmented modes) ── */\n.navBar {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  width: 100%;\n  max-width: 480px;\n  padding: 0.75rem 1rem;\n  background: rgba(255, 255, 255, 0.7);\n  backdrop-filter: blur(20px);\n  -webkit-backdrop-filter: blur(20px);\n  border: 1px solid rgba(0, 0, 0, 0.08);\n  border-radius: 14px;\n  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);\n\n  [data-theme='dark'] & {\n    background: rgba(26, 31, 44, 0.7);\n    border: 1px solid rgba(255, 255, 255, 0.1);\n    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);\n  }\n}\n\n.navItems {\n  display: flex;\n  align-items: center;\n  gap: 0.5rem;\n}\n\n.iconButton {\n  position: relative;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 36px;\n  height: 36px;\n  padding: 0;\n  background: none;\n  border: none;\n  border-radius: 8px;\n  color: var(--text-blue);\n  outline: none;\n\n  svg {\n    width: 20px;\n    height: 20px;\n  }\n}\n\n.iconWrapper {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 100%;\n  height: 100%;\n  will-change: transform;\n}\n\n.pillButton {\n  position: relative;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  padding: 6px 14px;\n  background: none;\n  border: none;\n  border-radius: 8px;\n  color: var(--text-blue);\n  font-size: 15px;\n  font-weight: 500;\n  outline: none;\n}\n";
+
+export const FULL_MULTI_STATE_BADGE_TSX = `'use client';
+
+import React, { useState, useRef, useEffect, Fragment } from 'react';
+import {
+  motion,
+  AnimatePresence,
+  useTime,
+  useTransform,
+  animate,
+  type Transition,
+} from 'framer-motion';
+import styles from './MultiStateBadge.module.scss';
+
+export type MultiStateBadgeState = 'idle' | 'processing' | 'success' | 'error';
+
+export interface MultiStateBadgeLabels {
+  idle?: string;
+  processing?: string;
+  success?: string;
+  error?: string;
+}
+
+export interface MultiStateBadgeProps {
+  /**
+   * Current active state of the badge.
+   * If not provided, badge manages its own state and cycles on click.
+   */
+  state?: MultiStateBadgeState;
+  /**
+   * Callback fired when badge state changes or is clicked.
+   */
+  onStateChange?: (state: MultiStateBadgeState) => void;
+  /**
+   * Whether clicking the badge cycles to the next state.
+   * Defaults to true.
+   */
+  interactive?: boolean;
+  /**
+   * Optional custom label overrides for each state.
+   */
+  labels?: MultiStateBadgeLabels;
+  /**
+   * Custom className for the outer container.
+   */
+  className?: string;
+  /**
+   * Custom style for the outer container.
+   */
+  style?: React.CSSProperties;
+}
+
+const DEFAULT_LABELS: Record<MultiStateBadgeState, string> = {
+  idle: 'Start',
+  processing: 'Processing',
+  success: 'Done',
+  error: 'Something went wrong',
+};
+
+const STATE_ORDER: MultiStateBadgeState[] = ['idle', 'processing', 'success', 'error'];
+
+const springTransition: Transition = {
+  type: 'spring',
+  stiffness: 600,
+  damping: 30,
+};
+
+const pathSpring: Transition = {
+  type: 'spring',
+  stiffness: 150,
+  damping: 20,
+};
+
+const pathAnimation = {
+  initial: { pathLength: 0 },
+  animate: { pathLength: 1 },
+  transition: pathSpring,
+};
+
+const delayedPathAnimation = {
+  initial: { pathLength: 0 },
+  animate: { pathLength: 1 },
+  transition: { ...pathSpring, delay: 0.1 },
+};
+
+const commonSvgProps = {
+  width: 20,
+  height: 20,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.5,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+};
+
+// Success checkmark icon with animated path drawing
+const SuccessIcon = () => (
+  <motion.svg {...commonSvgProps}>
+    <motion.polyline points="4 12 9 17 20 6" {...pathAnimation} />
+  </motion.svg>
+);
+
+// Processing spinner icon with continuous rotation and animated arc
+const ProcessingIcon = () => {
+  const time = useTime();
+  const rotate = useTransform(time, [0, 1000], [0, 360], { clamp: false });
+
+  return (
+    <motion.div
+      style={{
+        rotate,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 20,
+        height: 20,
+      }}
+    >
+      <motion.svg {...commonSvgProps}>
+        <motion.path
+          d="M21 12a9 9 0 1 1-6.219-8.56"
+          {...pathAnimation}
+        />
+      </motion.svg>
+    </motion.div>
+  );
+};
+
+// Error cross icon with animated two-line drawing
+const ErrorIcon = () => (
+  <motion.svg {...commonSvgProps}>
+    <motion.line x1="6" y1="6" x2="18" y2="18" {...pathAnimation} />
+    <motion.line x1="18" y1="6" x2="6" y2="18" {...delayedPathAnimation} />
+  </motion.svg>
+);
+
+// State icon renderer with slide, blur & scale transitions
+const BadgeIcon = ({ state }: { state: MultiStateBadgeState }) => {
+  let iconContent: React.ReactNode = <Fragment />;
+  switch (state) {
+    case 'idle':
+      iconContent = <Fragment />;
+      break;
+    case 'processing':
+      iconContent = <ProcessingIcon />;
+      break;
+    case 'success':
+      iconContent = <SuccessIcon />;
+      break;
+    case 'error':
+      iconContent = <ErrorIcon />;
+      break;
+  }
+
+  return (
+    <motion.span
+      className={styles.iconContainer}
+      animate={{ width: state === 'idle' ? 0 : 20 }}
+      transition={springTransition}
+    >
+      <AnimatePresence mode="wait">
+        {state !== 'idle' && (
+          <motion.span
+            key={state}
+            className={styles.icon}
+            initial={{ y: -40, scale: 0.5, filter: 'blur(6px)' }}
+            animate={{ y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ y: 40, scale: 0.5, filter: 'blur(6px)' }}
+            transition={{ duration: 0.15, ease: 'easeInOut' }}
+          >
+            {iconContent}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </motion.span>
+  );
+};
+
+// Animated text label with measured width and smooth blur morph
+const BadgeLabel = ({
+  state,
+  labels,
+}: {
+  state: MultiStateBadgeState;
+  labels: Record<MultiStateBadgeState, string>;
+}) => {
+  const [measuredWidth, setMeasuredWidth] = useState<number>(0);
+  const measureRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (measureRef.current) {
+      const { width } = measureRef.current.getBoundingClientRect();
+      setMeasuredWidth(width);
+    }
+  }, [state, labels]);
+
+  const currentText = labels[state];
+
+  return (
+    <>
+      <div ref={measureRef} className={styles.textMeasure}>
+        {currentText}
+      </div>
+      <motion.span
+        layout
+        className={styles.textContainer}
+        animate={{ width: measuredWidth }}
+        transition={springTransition}
+      >
+        <AnimatePresence mode="sync" initial={false}>
+          <motion.div
+            key={state}
+            className={styles.textItem}
+            initial={{ y: -20, opacity: 0, filter: 'blur(10px)', position: 'absolute' }}
+            animate={{ y: 0, opacity: 1, filter: 'blur(0px)', position: 'relative' }}
+            exit={{ y: 20, opacity: 0, filter: 'blur(10px)', position: 'absolute' }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+          >
+            {currentText}
+          </motion.div>
+        </AnimatePresence>
+      </motion.span>
+    </>
+  );
+};
+
+// Inner Badge Component with shake / bounce trigger effects
+const BadgePill = ({
+  state,
+  labels,
+}: {
+  state: MultiStateBadgeState;
+  labels: Record<MultiStateBadgeState, string>;
+}) => {
+  const badgeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!badgeRef.current) return;
+    if (state === 'error') {
+      animate(
+        badgeRef.current,
+        { x: [0, -6, 6, -6, 0] },
+        {
+          duration: 0.3,
+          ease: 'easeInOut',
+          times: [0, 0.25, 0.5, 0.75, 1],
+          repeat: 0,
+          delay: 0.1,
+        }
+      );
+    } else if (state === 'success') {
+      animate(
+        badgeRef.current,
+        { scale: [1, 1.2, 1] },
+        {
+          duration: 0.3,
+          ease: 'easeInOut',
+          times: [0, 0.5, 1],
+          repeat: 0,
+        }
+      );
+    }
+  }, [state]);
+
+  return (
+    <motion.div
+      ref={badgeRef}
+      className={styles.badge}
+      animate={{ gap: state === 'idle' ? 0 : 8 }}
+      transition={springTransition}
+    >
+      <BadgeIcon state={state} />
+      <BadgeLabel state={state} labels={labels} />
+    </motion.div>
+  );
+};
+
+export const MultiStateBadge: React.FC<MultiStateBadgeProps> = ({
+  state: controlledState,
+  onStateChange,
+  interactive = true,
+  labels: customLabels,
+  className,
+  style,
+}) => {
+  const [internalState, setInternalState] = useState<MultiStateBadgeState>('idle');
+  const currentState = controlledState !== undefined ? controlledState : internalState;
+
+  const mergedLabels: Record<MultiStateBadgeState, string> = {
+    ...DEFAULT_LABELS,
+    ...customLabels,
+  };
+
+  const getNextState = (current: MultiStateBadgeState): MultiStateBadgeState => {
+    const currentIndex = STATE_ORDER.indexOf(current);
+    const nextIndex = (currentIndex + 1) % STATE_ORDER.length;
+    return STATE_ORDER[nextIndex];
+  };
+
+  const handleClick = () => {
+    if (!interactive) return;
+    const next = getNextState(currentState);
+    if (controlledState === undefined) {
+      setInternalState(next);
+    }
+    onStateChange?.(next);
+  };
+
+  return (
+    <div className={\`\${styles.container} \${className || ''}\`} style={style}>
+      <button
+        type="button"
+        className={styles.badgeButton}
+        onClick={handleClick}
+        disabled={!interactive}
+        aria-label={\`Current status: \${mergedLabels[currentState]}. Click to cycle status.\`}
+      >
+        <BadgePill state={currentState} labels={mergedLabels} />
+      </button>
+    </div>
+  );
+};
+
+export default MultiStateBadge;
+`;
+
+export const FULL_MULTI_STATE_BADGE_SCSS = `.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  min-height: 80px;
+  position: relative;
+}
+
+.badgeButton {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: normal;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba(99, 102, 241, 0.7);
+    outline-offset: 4px;
+    border-radius: 999px;
+  }
+}
+
+.badge {
+  background-color: #ffffff;
+  color: #0b1012;
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-radius: 999px;
+  will-change: transform, filter;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+
+  :global([data-theme='light']) & {
+    background-color: #0f172a;
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  }
+}
+
+.iconContainer {
+  height: 20px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.icon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.textMeasure {
+  position: absolute;
+  visibility: hidden;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  pointer-events: none;
+}
+
+.textContainer {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+}
+
+.textItem {
+  white-space: nowrap;
+  text-overflow: clip;
+}
+`;
+
