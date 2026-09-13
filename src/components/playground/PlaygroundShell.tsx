@@ -56,6 +56,7 @@ import {
   SmoothTabs,
   DEFAULT_TABS,
   TabItem,
+  RadixSlider,
 } from '@/components/ui';
 
 
@@ -112,6 +113,8 @@ import {
   FULL_CHECKBOX_SCSS,
   FULL_SMOOTH_TABS_TSX,
   FULL_SMOOTH_TABS_SCSS,
+  FULL_RADIX_SLIDER_TSX,
+  FULL_RADIX_SLIDER_SCSS,
 } from './componentSources';
 
 
@@ -452,6 +455,86 @@ export function CheckboxDemo() {
     },
     sourceCode: FULL_CHECKBOX_TSX,
     scssCode: FULL_CHECKBOX_SCSS,
+  },
+  {
+    id: 'radix-slider',
+    name: 'Radix: Slider with AnimateNumber',
+    category: 'Inputs',
+    description: 'Motion.dev "Radix: Slider with AnimateNumber" — interactive Radix slider with dynamic pendulum tilt rotation physics and rolling AnimateNumber badge.',
+    controls: [
+      { name: 'value', type: 'number', defaultValue: 50 },
+      { name: 'min', type: 'number', defaultValue: 0 },
+      { name: 'max', type: 'number', defaultValue: 100 },
+      { name: 'step', type: 'number', defaultValue: 1 },
+      {
+        name: 'accentColor',
+        type: 'select',
+        defaultValue: 'Purple (Default)',
+        options: ['Purple (Default)', 'Mint', 'Pink', 'Blue', 'Emerald'],
+      },
+      { name: 'tiltSensitivity', type: 'number', defaultValue: -0.1 },
+      { name: 'disabled', type: 'boolean', defaultValue: false },
+    ],
+    render: (props) => {
+      const colorMap: Record<string, string> = {
+        'Purple (Default)': '#9911ff',
+        'Mint': '#0cdcf7',
+        'Pink': '#ff0088',
+        'Blue': '#3b82f6',
+        'Emerald': '#10b981',
+      };
+      const accent = colorMap[String(props.accentColor || 'Purple (Default)')] || '#9911ff';
+      return (
+        <Box
+          key={`${props.value}-${props.min}-${props.max}-${props.step}-${accent}-${props.tiltSensitivity}-${props.disabled}`}
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: 260,
+            py: 6,
+          }}
+        >
+          <RadixSlider
+            defaultValue={[Number(props.value ?? 50)]}
+            min={Number(props.min ?? 0)}
+            max={Number(props.max ?? 100)}
+            step={Number(props.step ?? 1)}
+            tiltSensitivity={Number(props.tiltSensitivity ?? -0.1)}
+            accentColor={accent}
+            disabled={Boolean(props.disabled)}
+          />
+        </Box>
+      );
+    },
+    generateCode: (props) => {
+      const colorMap: Record<string, string> = {
+        'Purple (Default)': '#9911ff',
+        'Mint': '#0cdcf7',
+        'Pink': '#ff0088',
+        'Blue': '#3b82f6',
+        'Emerald': '#10b981',
+      };
+      const accent = colorMap[String(props.accentColor || 'Purple (Default)')] || '#9911ff';
+      return `import React from 'react';
+import { RadixSlider } from '@/components/ui/RadixSlider';
+
+export function RadixSliderDemo() {
+  return (
+    <RadixSlider
+      defaultValue={[${props.value ?? 50}]}
+      min={${props.min ?? 0}}
+      max={${props.max ?? 100}}
+      step={${props.step ?? 1}}
+      tiltSensitivity={${props.tiltSensitivity ?? -0.1}}
+      accentColor="${accent}"${props.disabled ? '\n      disabled' : ''}
+    />
+  );
+}`;
+    },
+    sourceCode: FULL_RADIX_SLIDER_TSX,
+    scssCode: FULL_RADIX_SLIDER_SCSS,
   },
   {
     id: 'line-graph',

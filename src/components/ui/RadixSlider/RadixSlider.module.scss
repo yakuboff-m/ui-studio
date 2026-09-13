@@ -1,0 +1,112 @@
+.wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  box-sizing: border-box;
+  font-family: inherit;
+
+  /* Theme tokens */
+  --border: #1c2623;
+  --white: #ffffff;
+  --black: #0b1012;
+  --hue-3: #9911ff;
+  --slider-accent: var(--hue-3);
+
+  :global([data-theme='light']) & {
+    --border: #e2e8f0;
+    --white: #0f172a;
+    --black: #ffffff;
+    --hue-3: #7c3aed;
+    --slider-accent: var(--hue-3);
+  }
+}
+
+.form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+.slider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  touch-action: none;
+  width: 240px;
+  height: 24px;
+  cursor: pointer;
+
+  &[data-disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.track {
+  background-color: var(--border);
+  position: relative;
+  flex-grow: 1;
+  border-radius: 9999px;
+  height: 4px;
+  overflow: hidden;
+  transition: background-color 0.2s ease;
+}
+
+.range {
+  position: absolute;
+  background-color: var(--white);
+  border-radius: 9999px;
+  height: 100%;
+}
+
+.thumb {
+  display: block;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  background-color: var(--white);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  cursor: grab;
+  outline: none;
+  border: none;
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+
+  &:active {
+    cursor: grabbing;
+    transform: scale(1.05);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--slider-accent), 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.thumbTextContainer {
+  position: absolute;
+  top: calc(-100% - 12px);
+  left: 50%;
+  width: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.thumbText {
+  background-color: var(--slider-accent);
+  color: #ffffff;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+  will-change: transform;
+}

@@ -7677,5 +7677,231 @@ export const FULL_SMOOTH_TABS_SCSS = `.container {
 }
 `;
 
+export const FULL_RADIX_SLIDER_TSX = `'use client';
 
+import React, { useEffect, useState } from 'react';
+import * as Slider from '@radix-ui/react-slider';
+import { useMotionValue, useVelocity, useSpring, SpringOptions } from 'framer-motion';
+import { AnimateNumber } from '@/components/ui/LineGraph/AnimateNumber';
+import styles from './RadixSlider.module.scss';
 
+export interface RadixSliderProps {
+  min?: number;
+  max?: number;
+  step?: number;
+  defaultValue?: number[];
+  value?: number[];
+  onValueChange?: (value: number[]) => void;
+  onValueCommit?: (value: number[]) => void;
+  disabled?: boolean;
+  tiltSensitivity?: number;
+  tiltSpring?: SpringOptions;
+  accentColor?: string;
+  ariaLabel?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+function calculateTiltTarget(val: number, sensitivity: number = -0.1): number {
+  return val * sensitivity;
+}
+
+export const RadixSlider: React.FC<RadixSliderProps> = ({
+  min = 0,
+  max = 100,
+  step = 1,
+  defaultValue = [50],
+  value: controlledValue,
+  onValueChange,
+  onValueCommit,
+  disabled = false,
+  tiltSensitivity = -0.1,
+  tiltSpring,
+  accentColor,
+  ariaLabel = 'Volume',
+  className = '',
+  style,
+}) => {
+  const isControlled = controlledValue !== undefined;
+  const [internalValue, setInternalValue] = useState<number[]>(defaultValue);
+
+  const currentValue = isControlled ? controlledValue : internalValue;
+  const activeNumber = currentValue[0] ?? min;
+
+  // Velocity-driven rotation physics (Motion.dev authentic formula)
+  const motionVal = useMotionValue(calculateTiltTarget(activeNumber, tiltSensitivity));
+  const velocity = useVelocity(motionVal);
+  const rotateSpring = useSpring(velocity, tiltSpring);
+
+  useEffect(() => {
+    motionVal.set(calculateTiltTarget(activeNumber, tiltSensitivity));
+  }, [activeNumber, motionVal, tiltSensitivity]);
+
+  const handleValueChange = (nextVals: number[]) => {
+    if (!isControlled) {
+      setInternalValue(nextVals);
+    }
+    onValueChange?.(nextVals);
+  };
+
+  const dynamicStyles = accentColor
+    ? ({
+        '--slider-accent': accentColor,
+      } as React.CSSProperties)
+    : undefined;
+
+  return (
+    <div className={\`\${styles.wrapper} \${className}\`} style={{ ...dynamicStyles, ...style }}>
+      <form onSubmit={(e) => e.preventDefault()} className={styles.form}>
+        <Slider.Root
+          className={styles.slider}
+          min={min}
+          max={max}
+          step={step}
+          value={currentValue}
+          defaultValue={defaultValue}
+          onValueChange={handleValueChange}
+          onValueCommit={onValueCommit}
+          disabled={disabled}
+          aria-label={ariaLabel}
+        >
+          <Slider.Track className={styles.track}>
+            <Slider.Range className={styles.range} />
+          </Slider.Track>
+          <Slider.Thumb className={styles.thumb} aria-label={ariaLabel}>
+            <div className={styles.thumbTextContainer}>
+              <AnimateNumber
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                locales="en-US"
+                className={styles.thumbText}
+                style={{
+                  originX: 0.5,
+                  originY: 1.5,
+                  rotate: rotateSpring,
+                }}
+              >
+                {activeNumber}
+              </AnimateNumber>
+            </div>
+          </Slider.Thumb>
+        </Slider.Root>
+      </form>
+    </div>
+  );
+};
+
+export default RadixSlider;
+`;
+
+export const FULL_RADIX_SLIDER_SCSS = `.wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  box-sizing: border-box;
+  font-family: inherit;
+
+  --border: #1c2623;
+  --white: #ffffff;
+  --black: #0b1012;
+  --hue-3: #9911ff;
+  --slider-accent: var(--hue-3);
+
+  :global([data-theme='light']) & {
+    --border: #e2e8f0;
+    --white: #0f172a;
+    --black: #ffffff;
+    --hue-3: #7c3aed;
+    --slider-accent: var(--hue-3);
+  }
+}
+
+.form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+.slider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  touch-action: none;
+  width: 240px;
+  height: 24px;
+  cursor: pointer;
+
+  &[data-disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.track {
+  background-color: var(--border);
+  position: relative;
+  flex-grow: 1;
+  border-radius: 9999px;
+  height: 4px;
+  overflow: hidden;
+  transition: background-color 0.2s ease;
+}
+
+.range {
+  position: absolute;
+  background-color: var(--white);
+  border-radius: 9999px;
+  height: 100%;
+}
+
+.thumb {
+  display: block;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  background-color: var(--white);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  cursor: grab;
+  outline: none;
+  border: none;
+  transition: box-shadow 0.15s ease, transform 0.1s ease;
+
+  &:active {
+    cursor: grabbing;
+    transform: scale(1.05);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--slider-accent), 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.thumbTextContainer {
+  position: absolute;
+  top: calc(-100% - 12px);
+  left: 50%;
+  width: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.thumbText {
+  background-color: var(--slider-accent);
+  color: #ffffff;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+  will-change: transform;
+}
+`;

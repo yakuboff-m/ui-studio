@@ -15,6 +15,7 @@ import {
   motion,
   MotionConfig,
   MotionConfigContext,
+  useIsPresent,
   usePresence,
   HTMLMotionProps,
 } from 'framer-motion';
@@ -101,13 +102,13 @@ const DigitReel = forwardRef<HTMLSpanElement, DigitReelProps>(function DigitReel
   useImperativeHandle(ref, () => outerRef.current!, []);
 
   const digitRefs = useRef<(HTMLSpanElement | null)[]>(new Array(10));
-  const [isPresent] = usePresence();
+  const isPresent = useIsPresent();
   const activeDigit: number = isPresent ? value : 0;
 
   useIsomorphicLayoutEffect(() => {
     if (!innerRef.current || !digitRefs.current[initialDigit]) return;
     innerRef.current.style.width = getEmWidth(digitRefs.current[initialDigit]!);
-  }, [initialDigit]);
+  }, []);
 
   const prevDigitRef = useRef<number>(initialValue);
   useIsomorphicLayoutEffect(() => {
@@ -130,7 +131,7 @@ const DigitReel = forwardRef<HTMLSpanElement, DigitReelProps>(function DigitReel
     return () => {
       prevDigitRef.current = activeDigit;
     };
-  }, [activeDigit, trend, transition]);
+  }, [activeDigit]);
 
   useEffect(() => {
     if ((isFirst && initialDigit === activeDigit) || !digitRefs.current[activeDigit]) return;
@@ -139,7 +140,7 @@ const DigitReel = forwardRef<HTMLSpanElement, DigitReelProps>(function DigitReel
       widthCache.set(outerRef.current, width);
       animate(outerRef.current, { width }, transition as any);
     }
-  }, [activeDigit, isFirst, initialDigit, transition]);
+  }, [activeDigit]);
 
   const renderDigit = (d: number) => (
     <span
@@ -227,7 +228,7 @@ const StaticPart = forwardRef<HTMLSpanElement, StaticPartProps>(function StaticP
   ref
 ) {
   const { partKey, type, children, ...rest } = props;
-  const [isPresent] = usePresence();
+  const isPresent = useIsPresent();
   const { justify } = useContext(JustifyContext);
 
   return (
@@ -292,9 +293,33 @@ const NumberSection = forwardRef<HTMLSpanElement, NumberSectionProps>(function N
       containerRef.current.style.width = getEmWidth(innerRef.current);
       return;
     }
-    const width = getEmWidth(innerRef.current);
-    animate(containerRef.current, { width }, transition as any);
-  }, [parts, isFirst, transition]);
+
+    const children = Array.from(innerRef.current.children) as HTMLElement[];
+    const restores: (() => void)[] = [];
+    for (const child of children) {
+      if (child.dataset.state === 'exiting') {
+        const next = child.nextSibling;
+        child.remove();
+        restores.push(() => {
+          innerRef.current?.insertBefore(child, next);
+        });
+      } else {
+        const targetWidth = widthCache.get(child);
+        if (targetWidth) {
+          const prevWidth = child.style.width;
+          child.style.width = targetWidth;
+          restores.push(() => {
+            child.style.width = prevWidth;
+          });
+        }
+      }
+    }
+    const finalWidth = getEmWidth(innerRef.current);
+    for (let i = restores.length - 1; i >= 0; i--) {
+      restores[i]();
+    }
+    animate(containerRef.current, { width: finalWidth }, transition as any);
+  }, [parts.map((p) => p.value).join(''), isFirst, transition]);
 
   return (
     <JustifyContext.Provider value={contextValue}>
