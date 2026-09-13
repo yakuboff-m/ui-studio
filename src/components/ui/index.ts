@@ -22,3 +22,6 @@ export * from './UserButton';
 export * from './IosPointer';
 export * from './MultiStateBadge';
 export * from './LineGraph';
+export * from './Checkbox';
+export * from './SmoothTabs';
+

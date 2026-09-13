@@ -52,6 +52,10 @@ import {
   IosPointer,
   MultiStateBadge,
   LineGraph,
+  Checkbox,
+  SmoothTabs,
+  DEFAULT_TABS,
+  TabItem,
 } from '@/components/ui';
 
 
@@ -104,6 +108,10 @@ import {
   FULL_MULTI_STATE_BADGE_SCSS,
   FULL_LINE_GRAPH_TSX,
   FULL_LINE_GRAPH_SCSS,
+  FULL_CHECKBOX_TSX,
+  FULL_CHECKBOX_SCSS,
+  FULL_SMOOTH_TABS_TSX,
+  FULL_SMOOTH_TABS_SCSS,
 } from './componentSources';
 
 
@@ -208,7 +216,243 @@ const LINE_GRAPH_PRESETS: Record<string, number[]> = {
   'Steady Surge': [15, 28, 44, 58, 74, 90],
 };
 
+const SMOOTH_TABS_PRESETS: Record<string, TabItem[]> = {
+  'Default (Motion.dev)': DEFAULT_TABS,
+  Analytics: [
+    {
+      id: 'metrics',
+      label: 'Metrics',
+      color: 'var(--hue-3)',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="2" y="10" width="3" height="6" rx="1" fill="currentColor" />
+          <rect x="7" y="6" width="3" height="10" rx="1" fill="currentColor" />
+          <rect x="12" y="2" width="3" height="14" rx="1" fill="currentColor" />
+        </svg>
+      ),
+      description: 'Real-time analytics and user interaction tracking for your digital products.',
+      stats: [
+        { label: 'Visitors', value: '42.8k' },
+        { label: 'Bounce', value: '24%' },
+        { label: 'Duration', value: '3m 12s' },
+      ],
+    },
+    {
+      id: 'performance',
+      label: 'Performance',
+      color: 'var(--hue-1)',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="2" />
+          <path d="M9 5v4l2.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      ),
+      description: 'System response latency, edge caching, and bundle load times.',
+      stats: [
+        { label: 'TTFB', value: '48ms' },
+        { label: 'LCP', value: '0.8s' },
+        { label: 'Uptime', value: '99.98%' },
+      ],
+    },
+    {
+      id: 'conversions',
+      label: 'Conversions',
+      color: 'var(--hue-5)',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M2 14l5-5 3 3 6-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M12 5h4v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+      description: 'Funnel progression, checkout success rate, and active trial conversions.',
+      stats: [
+        { label: 'Signups', value: '1,420' },
+        { label: 'Checkout', value: '88%' },
+        { label: 'MRR', value: '+$14.2k' },
+      ],
+    },
+  ],
+  DevOps: [
+    {
+      id: 'deployments',
+      label: 'Deployments',
+      color: 'var(--hue-3)',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M9 2L2 6l7 4 7-4-7-4zM2 12l7 4 7-4M2 9l7 4 7-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+      description: 'Continuous integration and deployment pipelines across production nodes.',
+      stats: [
+        { label: 'Active', value: '6 Nodes' },
+        { label: 'Deploys', value: '38/day' },
+        { label: 'Rollbacks', value: '0' },
+      ],
+    },
+    {
+      id: 'pipelines',
+      label: 'Pipelines',
+      color: 'var(--hue-1)',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="2" y="3" width="14" height="4" rx="2" stroke="currentColor" strokeWidth="1.5" />
+          <rect x="2" y="11" width="14" height="4" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      ),
+      description: 'Automated test suites, linter runs, security scanners, and docker builds.',
+      stats: [
+        { label: 'Pass Rate', value: '99.4%' },
+        { label: 'Avg Time', value: '2m 14s' },
+        { label: 'Queued', value: '1' },
+      ],
+    },
+    {
+      id: 'infrastructure',
+      label: 'Infra',
+      color: 'var(--hue-5)',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <circle cx="5" cy="5" r="3" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="13" cy="5" r="3" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="9" cy="13" r="3" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M6.5 7.5L8 10.5M11.5 7.5L10 10.5" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+      ),
+      description: 'Cloud cluster topology, load balancer health, and serverless compute.',
+      stats: [
+        { label: 'Clusters', value: '4 Global' },
+        { label: 'CPU Load', value: '32%' },
+        { label: 'Memory', value: '54%' },
+      ],
+    },
+  ],
+};
+
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'smooth-tabs',
+    name: 'Smooth Tabs',
+    category: 'Navigation',
+    description: 'Motion.dev "Smooth tabs" — spring-animated tab indicator with layoutId and directional blur/slide content transitions with metrics.',
+    controls: [
+      {
+        name: 'preset',
+        type: 'select',
+        defaultValue: 'Default (Motion.dev)',
+        options: ['Default (Motion.dev)', 'Analytics', 'DevOps'],
+      },
+      { name: 'stiffness', type: 'number', defaultValue: 500 },
+      { name: 'damping', type: 'number', defaultValue: 35 },
+      { name: 'contentOffsetX', type: 'number', defaultValue: 50 },
+      { name: 'contentDuration', type: 'number', defaultValue: 0.3 },
+    ],
+    render: (props) => {
+      const presetKey = String(props.preset || 'Default (Motion.dev)');
+      const tabsList = SMOOTH_TABS_PRESETS[presetKey] || DEFAULT_TABS;
+      return (
+        <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', py: 4 }}>
+          <SmoothTabs
+            key={presetKey}
+            tabs={tabsList}
+            indicatorSpring={{
+              stiffness: Number(props.stiffness ?? 500),
+              damping: Number(props.damping ?? 35),
+            }}
+            contentOffsetX={Number(props.contentOffsetX ?? 50)}
+            contentDuration={Number(props.contentDuration ?? 0.3)}
+          />
+        </Box>
+      );
+    },
+    generateCode: (props) => {
+      return `import React from 'react';
+import { SmoothTabs } from '@/components/ui/SmoothTabs';
+
+export function SmoothTabsDemo() {
+  return (
+    <SmoothTabs
+      indicatorSpring={{ stiffness: ${props.stiffness ?? 500}, damping: ${props.damping ?? 35} }}
+      contentOffsetX={${props.contentOffsetX ?? 50}}
+      contentDuration={${props.contentDuration ?? 0.3}}
+    />
+  );
+}`;
+    },
+    sourceCode: FULL_SMOOTH_TABS_TSX,
+    scssCode: FULL_SMOOTH_TABS_SCSS,
+  },
+  {
+    id: 'checkbox',
+    name: 'Radix: Checkbox',
+    category: 'Inputs',
+    description: 'Motion.dev "Radix: Checkbox" — animated tick checkmark with spring path drawing and dynamic stroke-linecap using Radix UI and Motion.',
+    controls: [
+      { name: 'checked', type: 'boolean', defaultValue: true },
+      { name: 'label', type: 'text', defaultValue: 'Accept terms and conditions' },
+      {
+        name: 'colorTheme',
+        type: 'select',
+        defaultValue: 'Default (Mint)',
+        options: ['Default (Mint)', 'Indigo', 'Cyan', 'Rose', 'Amber'],
+      },
+      {
+        name: 'size',
+        type: 'select',
+        defaultValue: 'md (32px)',
+        options: ['sm (24px)', 'md (32px)', 'lg (40px)'],
+      },
+      { name: 'disabled', type: 'boolean', defaultValue: false },
+    ],
+    render: (props) => {
+      let color: string | undefined;
+      if (props.colorTheme === 'Indigo') color = '#6366f1';
+      else if (props.colorTheme === 'Cyan') color = '#06b6d4';
+      else if (props.colorTheme === 'Rose') color = '#fb7185';
+      else if (props.colorTheme === 'Amber') color = '#ffe023';
+
+      const sizeVal = props.size === 'sm (24px)' ? 'sm' : props.size === 'lg (40px)' ? 'lg' : 'md';
+
+      return (
+        <Box
+          key={`${props.checked}-${props.size}-${props.colorTheme}-${props.disabled}-${props.label}`}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: 240,
+            py: 6,
+            gap: 2,
+          }}
+        >
+          <Checkbox
+            defaultChecked={Boolean(props.checked)}
+            label={props.label ? String(props.label) : undefined}
+            color={color}
+            size={sizeVal}
+            disabled={Boolean(props.disabled)}
+          />
+        </Box>
+      );
+    },
+    generateCode: (props) => {
+      const sizeVal = props.size === 'sm (24px)' ? 'sm' : props.size === 'lg (40px)' ? 'lg' : 'md';
+      return `import React from 'react';
+import { Checkbox } from '@/components/ui/Checkbox';
+
+export function CheckboxDemo() {
+  return (
+    <Checkbox
+      defaultChecked={${Boolean(props.checked)}}
+      label="${props.label || ''}"
+      size="${sizeVal}"${props.disabled ? '\n      disabled' : ''}
+    />
+  );
+}`;
+    },
+    sourceCode: FULL_CHECKBOX_TSX,
+    scssCode: FULL_CHECKBOX_SCSS,
+  },
   {
     id: 'line-graph',
     name: 'Line Graph',

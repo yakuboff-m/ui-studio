@@ -7023,3 +7023,659 @@ export const FULL_LINE_GRAPH_SCSS = `.wrapper {
   outline: none;
 }
 `;
+
+export const FULL_CHECKBOX_TSX = `'use client';
+
+import React, { useState, useId } from 'react';
+import * as CheckboxPrimitive from '@radix-ui/react-checkbox';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
+import styles from './Checkbox.module.scss';
+
+export interface MotionCheckboxProps {
+  /**
+   * Controlled checked state.
+   */
+  checked?: boolean;
+  /**
+   * Initial checked state for uncontrolled mode. Defaults to false.
+   */
+  defaultChecked?: boolean;
+  /**
+   * Callback fired when checked state changes.
+   */
+  onCheckedChange?: (checked: boolean) => void;
+  /**
+   * Whether the checkbox is disabled.
+   */
+  disabled?: boolean;
+  /**
+   * Optional custom accent color (e.g. #8df0cc, #6366f1, #06b6d4).
+   */
+  color?: string;
+  /**
+   * Size variant: 'sm' (24px), 'md' (32px), 'lg' (40px). Defaults to 'md'.
+   */
+  size?: 'sm' | 'md' | 'lg';
+  /**
+   * Optional label displayed alongside checkbox.
+   */
+  label?: React.ReactNode;
+  /**
+   * Unique element id for label association.
+   */
+  id?: string;
+  /**
+   * Custom className for root container.
+   */
+  className?: string;
+  /**
+   * Custom inline styles for root container.
+   */
+  style?: React.CSSProperties;
+}
+
+export const Checkbox: React.FC<MotionCheckboxProps> = ({
+  checked: controlledChecked,
+  defaultChecked = false,
+  onCheckedChange,
+  disabled = false,
+  color,
+  size = 'md',
+  label,
+  id,
+  className = '',
+  style,
+}) => {
+  const generatedId = useId();
+  const checkboxId = id || generatedId;
+
+  const isControlled = controlledChecked !== undefined;
+  const [internalChecked, setInternalChecked] = useState<boolean>(defaultChecked);
+  const isChecked = isControlled ? controlledChecked : internalChecked;
+
+  // Path length motion value initialized to current checked state
+  const pathLength = useMotionValue(isChecked ? 1 : 0);
+
+  // Dynamic stroke-linecap: 'none' when length is 0 (avoids visible dot artifact), 'round' when drawn
+  const strokeLinecap = useTransform(() => (pathLength.get() === 0 ? 'none' : 'round'));
+
+  const handleCheckedChange = (nextChecked: boolean) => {
+    if (disabled) return;
+    if (!isControlled) {
+      setInternalChecked(nextChecked);
+    }
+    onCheckedChange?.(nextChecked);
+  };
+
+  const sizeClass = size === 'sm' ? styles.sizeSm : size === 'lg' ? styles.sizeLg : styles.sizeMd;
+
+  const containerStyle: React.CSSProperties = {
+    ...style,
+    ...(color ? ({ '--hue-6': color } as React.CSSProperties) : {}),
+  };
+
+  return (
+    <div className={[styles.container, className].filter(Boolean).join(' ')} style={containerStyle}>
+      <CheckboxPrimitive.Root
+        id={checkboxId}
+        checked={isChecked}
+        onCheckedChange={(checked) => handleCheckedChange(checked === true)}
+        disabled={disabled}
+        asChild
+      >
+        <motion.button
+          type="button"
+          className={[styles.root, sizeClass].filter(Boolean).join(' ')}
+          whileHover={disabled ? undefined : { scale: 1.05 }}
+          whileTap={disabled ? undefined : { scale: 0.95 }}
+          data-primary-action="true"
+          aria-label={typeof label === 'string' ? label : 'Checkbox'}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--hue-6)"
+            strokeWidth="3"
+            className={styles.svgIcon}
+          >
+            <motion.path
+              d="M4 12L10 18L20 6"
+              initial={false}
+              animate={{ pathLength: isChecked ? 1 : 0 }}
+              transition={{
+                type: 'spring',
+                bounce: 0,
+                duration: isChecked ? 0.3 : 0.1,
+              }}
+              style={{
+                pathLength,
+                strokeLinecap,
+              }}
+            />
+          </svg>
+        </motion.button>
+      </CheckboxPrimitive.Root>
+
+      {label && (
+        <label
+          htmlFor={checkboxId}
+          className={[styles.label, disabled ? styles.disabled : ''].filter(Boolean).join(' ')}
+        >
+          {label}
+        </label>
+      )}
+    </div>
+  );
+};
+
+export default Checkbox;
+`;
+
+export const FULL_CHECKBOX_SCSS = `.container {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  user-select: none;
+  font-family: inherit;
+
+  --hue-6: #8df0cc;
+  --layer: #13181a;
+  --border: #1e2427;
+  --text: #ededec;
+  --text-muted: #7a8180;
+
+  :global([data-theme='light']) & {
+    --hue-6: #059669;
+    --layer: #ffffff;
+    --border: #e0e0de;
+    --text: #1a1a1c;
+    --text-muted: #6e6a64;
+  }
+}
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background-color: var(--layer);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  padding: 4px;
+  box-sizing: border-box;
+  color: inherit;
+  outline: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+
+  &:focus-visible {
+    outline: none;
+    border-color: var(--hue-6);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--hue-6) 25%, transparent);
+  }
+
+  &[data-disabled] {
+    cursor: not-allowed;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.sizeSm {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  padding: 3px;
+}
+
+.sizeMd {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.sizeLg {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  padding: 5px;
+}
+
+.svgIcon {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.label {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1.4;
+  transition: color 0.2s ease;
+
+  &.disabled {
+    cursor: not-allowed;
+    color: var(--text-muted);
+  }
+}
+`;
+
+export const FULL_SMOOTH_TABS_TSX = `'use client';
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import styles from './SmoothTabs.module.scss';
+
+export interface TabItem {
+  id: string;
+  label: string;
+  color: string;
+  icon: React.ReactNode;
+  description: string;
+  stats: { label: string; value: string }[];
+}
+
+export interface SmoothTabsProps {
+  indicatorSpring?: { stiffness: number; damping: number };
+  contentOffsetX?: number;
+  contentDuration?: number;
+  tabs?: TabItem[];
+  activeIndex?: number;
+  defaultIndex?: number;
+  onChange?: (index: number) => void;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export const OverviewIcon: React.FC = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <rect x="1" y="1" width="7" height="7" rx="2" fill="currentColor" />
+    <rect x="10" y="1" width="7" height="7" rx="2" fill="currentColor" opacity={0.5} />
+    <rect x="1" y="10" width="7" height="7" rx="2" fill="currentColor" opacity={0.5} />
+    <rect x="10" y="10" width="7" height="7" rx="2" fill="currentColor" opacity={0.3} />
+  </svg>
+);
+
+export const ActivityIcon: React.FC = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <path
+      d="M1 9h3l2-5 3 10 2-7h6"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+export const SettingsIcon: React.FC = () => (
+  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <circle cx="9" cy="9" r="3" stroke="currentColor" strokeWidth="2" />
+    <path
+      d="M9 1v2M9 15v2M1 9h2M15 9h2M3.3 3.3l1.4 1.4M13.3 13.3l1.4 1.4M14.7 3.3l-1.4 1.4M4.7 13.3l-1.4 1.4"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+export const DEFAULT_TABS: TabItem[] = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    color: 'var(--hue-3)',
+    icon: <OverviewIcon />,
+    description: 'Track your project progress across all active workstreams and milestones.',
+    stats: [
+      { label: 'Active', value: '12' },
+      { label: 'Complete', value: '84' },
+      { label: 'Velocity', value: '94%' },
+    ],
+  },
+  {
+    id: 'activity',
+    label: 'Activity',
+    color: 'var(--hue-1)',
+    icon: <ActivityIcon />,
+    description: 'Recent changes, commits, and team updates from the last 7 days.',
+    stats: [
+      { label: 'Commits', value: '47' },
+      { label: 'Reviews', value: '23' },
+      { label: 'Merged', value: '18' },
+    ],
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    color: 'var(--hue-5)',
+    icon: <SettingsIcon />,
+    description: 'Configure notifications, access controls, and integration preferences.',
+    stats: [
+      { label: 'Members', value: '8' },
+      { label: 'Roles', value: '3' },
+      { label: 'Hooks', value: '5' },
+    ],
+  },
+];
+
+export const SmoothTabs: React.FC<SmoothTabsProps> = ({
+  indicatorSpring = { stiffness: 500, damping: 35 },
+  contentOffsetX = 50,
+  contentDuration = 0.3,
+  tabs = DEFAULT_TABS,
+  activeIndex: controlledIndex,
+  defaultIndex = 0,
+  onChange,
+  className = '',
+  style,
+}) => {
+  const isControlled = controlledIndex !== undefined;
+  const [internalIndex, setInternalIndex] = useState(defaultIndex);
+  const [direction, setDirection] = useState(0);
+
+  const activeIndex = isControlled ? controlledIndex : internalIndex;
+  const activeTab = tabs[activeIndex] || tabs[0];
+
+  const handleTabChange = (index: number) => {
+    if (index === activeIndex) return;
+    setDirection(index > activeIndex ? 1 : -1);
+    if (!isControlled) {
+      setInternalIndex(index);
+    }
+    onChange?.(index);
+  };
+
+  const variants = {
+    enter: (dir: number) => ({
+      x: dir * contentOffsetX,
+      opacity: 0,
+      filter: 'blur(4px)',
+    }),
+    active: {
+      x: 0,
+      opacity: 1,
+      filter: 'blur(0px)',
+    },
+    exit: (dir: number) => ({
+      x: dir * -contentOffsetX,
+      opacity: 0,
+      filter: 'blur(4px)',
+      transition: { duration: contentDuration * 0.5 },
+    }),
+  };
+
+  return (
+    <div className={\`\${styles.container} \${className}\`} style={style}>
+      <div className={styles.card}>
+        <div className={styles.segmentedControl}>
+          {tabs.map((tab, index) => {
+            const isActive = activeIndex === index;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                className={\`\${styles.tabButton} \${isActive ? \`\${styles.active} active\` : ''}\`}
+                onClick={() => handleTabChange(index)}
+                style={{
+                  color: isActive ? 'var(--black)' : 'var(--feint-text)',
+                }}
+                aria-selected={isActive}
+                role="tab"
+              >
+                <span className={styles.tabLabel}>{tab.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="smooth-tab-indicator"
+                    className={styles.indicator}
+                    transition={{
+                      type: 'spring',
+                      ...indicatorSpring,
+                    }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className={styles.contentContainer}>
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            <motion.div
+              key={activeTab.id}
+              variants={variants}
+              initial="enter"
+              animate="active"
+              exit="exit"
+              custom={direction}
+              transition={{
+                duration: contentDuration,
+                ease: [0.25, 1, 0.5, 1],
+              }}
+              className={styles.content}
+            >
+              <div className={styles.contentHeader}>
+                <div
+                  className={styles.icon}
+                  style={{
+                    backgroundColor: activeTab.color,
+                  }}
+                >
+                  {activeTab.icon}
+                </div>
+                <h3 className={styles.title}>{activeTab.label}</h3>
+              </div>
+
+              <p className={styles.description}>{activeTab.description}</p>
+
+              <div className={styles.statsRow}>
+                {activeTab.stats.map((stat) => (
+                  <div key={stat.label} className={styles.stat}>
+                    <span className={styles.statValue}>{stat.value}</span>
+                    <span className={styles.statLabel}>{stat.label}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SmoothTabs;
+`;
+
+
+export const FULL_SMOOTH_TABS_SCSS = `.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  font-family: inherit;
+
+  --layer: #0f1815;
+  --border: #1c2623;
+  --white: #ffffff;
+  --black: #0b1012;
+  --feint-text: #586d8c;
+  --hue-1: #ff0088;
+  --hue-3: #9911ff;
+  --hue-5: #0cdcf7;
+  --stat-bg: rgba(158, 234, 247, 0.04);
+  --tab-hover: #ffffff;
+
+  :global([data-theme='light']) & {
+    --layer: #ffffff;
+    --border: #e2e8f0;
+    --white: #0f172a;
+    --black: #ffffff;
+    --feint-text: #64748b;
+    --hue-1: #e11d48;
+    --hue-3: #7c3aed;
+    --hue-5: #0284c7;
+    --stat-bg: rgba(15, 23, 42, 0.03);
+    --tab-hover: #0f172a;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: clamp(280px, 90%, 420px);
+}
+
+.segmentedControl {
+  display: flex;
+  padding: 4px;
+  border-radius: 12px;
+  background-color: var(--layer);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  position: relative;
+}
+
+.tabButton {
+  position: relative;
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.2s ease;
+  z-index: 1;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--hue-5);
+  }
+
+  &:hover {
+    color: var(--tab-hover) !important;
+  }
+
+  &.active:hover {
+    color: var(--black) !important;
+  }
+}
+
+.tabLabel {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+  letter-spacing: -0.01em;
+}
+
+.indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background-color: var(--white);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.contentContainer {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: var(--layer);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  min-height: 200px;
+}
+
+.content {
+  padding: 24px;
+  will-change: transform, opacity, filter;
+  box-sizing: border-box;
+}
+
+.contentHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--black);
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--white);
+  letter-spacing: -0.01em;
+}
+
+.description {
+  margin: 0 0 20px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--feint-text);
+}
+
+.statsRow {
+  display: flex;
+  gap: 1px;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: var(--border);
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 12px;
+  background-color: var(--stat-bg);
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--white);
+}
+
+.statLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--feint-text);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+`;
+
+
+
