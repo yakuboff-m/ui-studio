@@ -57,6 +57,7 @@ import {
   DEFAULT_TABS,
   TabItem,
   RadixSlider,
+  NumberCounter,
 } from '@/components/ui';
 
 
@@ -115,6 +116,8 @@ import {
   FULL_SMOOTH_TABS_SCSS,
   FULL_RADIX_SLIDER_TSX,
   FULL_RADIX_SLIDER_SCSS,
+  FULL_NUMBER_COUNTER_TSX,
+  FULL_NUMBER_COUNTER_SCSS,
 } from './componentSources';
 
 
@@ -535,6 +538,83 @@ export function RadixSliderDemo() {
     },
     sourceCode: FULL_RADIX_SLIDER_TSX,
     scssCode: FULL_RADIX_SLIDER_SCSS,
+  },
+  {
+    id: 'number-counter',
+    name: 'Number Counter',
+    category: 'Inputs',
+    description: 'Motion.dev "Number counter" — interactive fluid counter capsule powered by LayoutGroup, rolling AnimateNumber reels, and spring micro-interactions.',
+    controls: [
+      { name: 'value', type: 'number', defaultValue: 0 },
+      { name: 'min', type: 'number', defaultValue: -100 },
+      { name: 'max', type: 'number', defaultValue: 100 },
+      { name: 'step', type: 'number', defaultValue: 1 },
+      {
+        name: 'accentColor',
+        type: 'select',
+        defaultValue: 'Mint (Default)',
+        options: ['Mint (Default)', 'Purple', 'Pink', 'Blue', 'Emerald'],
+      },
+      { name: 'disabled', type: 'boolean', defaultValue: false },
+    ],
+    render: (props) => {
+      const colorMap: Record<string, string> = {
+        'Mint (Default)': '#0cdcf7',
+        'Purple': '#9911ff',
+        'Pink': '#ff0088',
+        'Blue': '#3b82f6',
+        'Emerald': '#10b981',
+      };
+      const accent = colorMap[String(props.accentColor || 'Mint (Default)')] || '#0cdcf7';
+      return (
+        <Box
+          key={`${props.value}-${props.min}-${props.max}-${props.step}-${accent}-${props.disabled}`}
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: 260,
+            py: 6,
+          }}
+        >
+          <NumberCounter
+            defaultValue={Number(props.value ?? 0)}
+            min={props.min !== undefined ? Number(props.min) : undefined}
+            max={props.max !== undefined ? Number(props.max) : undefined}
+            step={Number(props.step ?? 1)}
+            accentColor={accent}
+            disabled={Boolean(props.disabled)}
+          />
+        </Box>
+      );
+    },
+    generateCode: (props) => {
+      const colorMap: Record<string, string> = {
+        'Mint (Default)': '#0cdcf7',
+        'Purple': '#9911ff',
+        'Pink': '#ff0088',
+        'Blue': '#3b82f6',
+        'Emerald': '#10b981',
+      };
+      const accent = colorMap[String(props.accentColor || 'Mint (Default)')] || '#0cdcf7';
+      return `import React from 'react';
+import { NumberCounter } from '@/components/ui/NumberCounter';
+
+export function NumberCounterDemo() {
+  return (
+    <NumberCounter
+      defaultValue={${props.value ?? 0}}
+      min={${props.min ?? -100}}
+      max={${props.max ?? 100}}
+      step={${props.step ?? 1}}
+      accentColor="${accent}"${props.disabled ? '\n      disabled' : ''}
+    />
+  );
+}`;
+    },
+    sourceCode: FULL_NUMBER_COUNTER_TSX,
+    scssCode: FULL_NUMBER_COUNTER_SCSS,
   },
   {
     id: 'line-graph',

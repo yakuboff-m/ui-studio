@@ -7905,3 +7905,253 @@ export const FULL_RADIX_SLIDER_SCSS = `.wrapper {
   will-change: transform;
 }
 `;
+
+export const FULL_NUMBER_COUNTER_TSX = `'use client';
+
+import React, { useState } from 'react';
+import { LayoutGroup, motion, MotionProps } from 'framer-motion';
+import { AnimateNumber } from '@/components/ui/LineGraph/AnimateNumber';
+import styles from './NumberCounter.module.scss';
+
+export interface NumberCounterProps {
+  /**
+   * Minimum allowed value. Default: -Infinity
+   */
+  min?: number;
+  /**
+   * Maximum allowed value. Default: Infinity
+   */
+  max?: number;
+  /**
+   * Step increment/decrement. Default: 1
+   */
+  step?: number;
+  /**
+   * Default initial value in uncontrolled mode. Default: 0
+   */
+  defaultValue?: number;
+  /**
+   * Current controlled value.
+   */
+  value?: number;
+  /**
+   * Callback fired when value changes.
+   */
+  onChange?: (val: number) => void;
+  /**
+   * Whether the counter is disabled. Default: false
+   */
+  disabled?: boolean;
+  /**
+   * Custom accent color (e.g. '#0cdcf7', '#9911ff').
+   */
+  accentColor?: string;
+  /**
+   * Custom class name for outer wrapper.
+   */
+  className?: string;
+  /**
+   * Inline style object.
+   */
+  style?: React.CSSProperties;
+}
+
+interface AdditionIconProps {
+  type: 'plus' | 'minus';
+  className?: string;
+}
+
+const AdditionIcon: React.FC<AdditionIconProps> = ({ type, className = '' }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={\`\${styles.icon} \${className}\`}
+  >
+    <path d="M5 12h14" />
+    {type === 'plus' && <path d="M12 5v14" />}
+  </svg>
+);
+
+export const NumberCounter: React.FC<NumberCounterProps> = ({
+  min = -Infinity,
+  max = Infinity,
+  step = 1,
+  defaultValue = 0,
+  value: controlledValue,
+  onChange,
+  disabled = false,
+  accentColor,
+  className = '',
+  style,
+}) => {
+  const isControlled = controlledValue !== undefined;
+  const [internalValue, setInternalValue] = useState<number>(defaultValue);
+  const activeValue = isControlled ? controlledValue : internalValue;
+
+  const handlePointerDown = (delta: number) => (e: React.PointerEvent) => {
+    e.preventDefault();
+    if (disabled) return;
+    const nextVal = Math.min(Math.max(activeValue + delta * step, min), max);
+    if (!isControlled) {
+      setInternalValue(nextVal);
+    }
+    onChange?.(nextVal);
+  };
+
+  const handleKeyDown = (delta: number) => (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (disabled) return;
+      const nextVal = Math.min(Math.max(activeValue + delta * step, min), max);
+      if (!isControlled) {
+        setInternalValue(nextVal);
+      }
+      onChange?.(nextVal);
+    }
+  };
+
+  const accentHex = accentColor || '#0cdcf7';
+  const dynamicStyles = accentColor
+    ? ({
+        '--counter-button-bg': \`\${accentColor}33\`,
+        '--counter-accent-solid': accentColor,
+      } as React.CSSProperties)
+    : undefined;
+
+  const buttonMotionProps: MotionProps = {
+    initial: {
+      boxShadow: \`0px 0px 0px 2px \${accentHex}00\`,
+    },
+    whileHover: disabled ? undefined : {
+      scale: 1.1,
+    },
+    whileTap: disabled ? undefined : {
+      scale: 0.9,
+    },
+    whileFocus: disabled ? undefined : {
+      boxShadow: \`0px 0px 0px 2px \${accentHex}ff\`,
+    },
+    layout: true,
+  };
+
+  const isMinusDisabled = disabled || (min != null && activeValue <= min);
+  const isPlusDisabled = disabled || (max != null && activeValue >= max);
+
+  return (
+    <div className={\`\${styles.wrapper} \${className}\`} style={{ ...dynamicStyles, ...style }}>
+      <LayoutGroup id="number-counter-group">
+        <motion.div layout className={styles.container}>
+          <motion.button
+            type="button"
+            className={styles.button}
+            disabled={isMinusDisabled}
+            onPointerDown={handlePointerDown(-1)}
+            onKeyDown={handleKeyDown(-1)}
+            aria-label="Decrement value"
+            {...buttonMotionProps}
+          >
+            <AdditionIcon type="minus" />
+          </motion.button>
+
+          <AnimateNumber
+            className={styles.number}
+            transition={{ type: 'spring', duration: 0.6, bounce: 0.2 }}
+          >
+            {activeValue}
+          </AnimateNumber>
+
+          <motion.button
+            type="button"
+            className={styles.button}
+            disabled={isPlusDisabled}
+            onPointerDown={handlePointerDown(1)}
+            onKeyDown={handleKeyDown(1)}
+            aria-label="Increment value"
+            {...buttonMotionProps}
+          >
+            <AdditionIcon type="plus" />
+          </motion.button>
+        </motion.div>
+      </LayoutGroup>
+    </div>
+  );
+};
+
+export default NumberCounter;
+`;
+
+export const FULL_NUMBER_COUNTER_SCSS = `.wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.container {
+  background-color: var(--counter-bg, rgba(255, 255, 255, 0.08));
+  border-radius: 1000px;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  font-family: var(--font-geist-mono, "Geist Mono", "JetBrains Mono", ui-monospace, monospace);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+
+  :global([data-mui-color-scheme="light"]) & {
+    background-color: var(--counter-bg, rgba(0, 0, 0, 0.04));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  }
+}
+
+.button {
+  background-color: var(--counter-button-bg, #0cdcf733);
+  color: var(--counter-button-color, #ffffff);
+  border: none;
+  border-radius: 50px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.15s ease, opacity 0.2s ease;
+
+  :global([data-mui-color-scheme="light"]) & {
+    color: var(--counter-button-color, #0f172a);
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.number {
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--counter-text-color, currentColor);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0.8em;
+}
+
+.icon {
+  display: block;
+  flex-shrink: 0;
+}
+`;
+
+

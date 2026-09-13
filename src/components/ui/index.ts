@@ -25,3 +25,4 @@ export * from './LineGraph';
 export * from './Checkbox';
 export * from './SmoothTabs';
 export * from './RadixSlider';
+export * from './NumberCounter';
