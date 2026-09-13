@@ -51,6 +51,7 @@ import {
   UserButton,
   IosPointer,
   MultiStateBadge,
+  LineGraph,
 } from '@/components/ui';
 
 
@@ -101,6 +102,8 @@ import {
   FULL_IOS_POINTER_SCSS,
   FULL_MULTI_STATE_BADGE_TSX,
   FULL_MULTI_STATE_BADGE_SCSS,
+  FULL_LINE_GRAPH_TSX,
+  FULL_LINE_GRAPH_SCSS,
 } from './componentSources';
 
 
@@ -198,7 +201,78 @@ const SKIPER96_ITEMS = [
   },
 ];
 
+const LINE_GRAPH_PRESETS: Record<string, number[]> = {
+  'Default (Motion.dev)': [30, 8, 36, 29, 50, 78],
+  'Tech Growth': [20, 35, 30, 55, 68, 92],
+  'Volatile Dip': [65, 82, 38, 70, 42, 85],
+  'Steady Surge': [15, 28, 44, 58, 74, 90],
+};
+
 const COMPONENT_REGISTRY: RegisteredComponent[] = [
+  {
+    id: 'line-graph',
+    name: 'Line Graph',
+    category: 'Data Display',
+    description: 'Motion.dev "Line graph" — interactive SVG line chart with animated pathLength draw, gradient area fill, point hit-zone scrubbing, and floating spring cursor follower.',
+    controls: [
+      {
+        name: 'preset',
+        type: 'select',
+        defaultValue: 'Default (Motion.dev)',
+        options: ['Default (Motion.dev)', 'Tech Growth', 'Volatile Dip', 'Steady Surge'],
+      },
+      { name: 'showTooltip', type: 'boolean', defaultValue: true },
+      {
+        name: 'colorTheme',
+        type: 'select',
+        defaultValue: 'Default (Mint & Magenta)',
+        options: ['Default (Mint & Magenta)', 'Indigo & Rose', 'Cyan & Amber'],
+      },
+    ],
+    render: (props) => {
+      const presetKey = String(props.preset || 'Default (Motion.dev)');
+      const data = LINE_GRAPH_PRESETS[presetKey] || LINE_GRAPH_PRESETS['Default (Motion.dev)'];
+
+      let positiveColor: string | undefined;
+      let negativeColor: string | undefined;
+      if (props.colorTheme === 'Indigo & Rose') {
+        positiveColor = '#6366f1';
+        negativeColor = '#f43f5e';
+      } else if (props.colorTheme === 'Cyan & Amber') {
+        positiveColor = '#06b6d4';
+        negativeColor = '#f59e0b';
+      }
+
+      return (
+        <Box sx={{ width: '100%', minHeight: 380, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+          <LineGraph
+            key={presetKey}
+            data={data}
+            positiveColor={positiveColor}
+            negativeColor={negativeColor}
+            showTooltip={props.showTooltip !== false}
+          />
+        </Box>
+      );
+    },
+    generateCode: (props) => {
+      const presetKey = String(props.preset || 'Default (Motion.dev)');
+      const data = LINE_GRAPH_PRESETS[presetKey] || LINE_GRAPH_PRESETS['Default (Motion.dev)'];
+      return `import React from 'react';
+import { LineGraph } from '@/components/ui/LineGraph';
+
+export function LineGraphDemo() {
+  return (
+    <LineGraph
+      data={${JSON.stringify(data)}}
+      showTooltip={${props.showTooltip !== false}}
+    />
+  );
+}`;
+    },
+    sourceCode: FULL_LINE_GRAPH_TSX,
+    scssCode: FULL_LINE_GRAPH_SCSS,
+  },
   {
     id: 'multi-state-badge',
     name: 'Multi-State Badge',
