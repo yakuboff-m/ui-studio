@@ -58,6 +58,7 @@ import {
   TabItem,
   RadixSlider,
   NumberCounter,
+  RadialMenu,
 } from '@/components/ui';
 
 
@@ -118,6 +119,8 @@ import {
   FULL_RADIX_SLIDER_SCSS,
   FULL_NUMBER_COUNTER_TSX,
   FULL_NUMBER_COUNTER_SCSS,
+  FULL_RADIAL_MENU_TSX,
+  FULL_RADIAL_MENU_SCSS,
 } from './componentSources';
 
 
@@ -615,6 +618,68 @@ export function NumberCounterDemo() {
     },
     sourceCode: FULL_NUMBER_COUNTER_TSX,
     scssCode: FULL_NUMBER_COUNTER_SCSS,
+  },
+  {
+    id: 'radial-menu',
+    name: 'Radial Menu',
+    category: 'Navigation',
+    description: 'Motion.dev "Radial menu" — circular radial menu where options fan out from a central button with staggered spring physics and scale micro-interactions.',
+    controls: [
+      { name: 'radius', type: 'number', defaultValue: 70 },
+      { name: 'staggerInterval', type: 'number', defaultValue: 0.04 },
+      { name: 'startAngle', type: 'number', defaultValue: -150 },
+      { name: 'arcSpan', type: 'number', defaultValue: 300 },
+      { name: 'stiffness', type: 'number', defaultValue: 420 },
+      { name: 'damping', type: 'number', defaultValue: 24 },
+      { name: 'showTooltips', type: 'boolean', defaultValue: true },
+      { name: 'disabled', type: 'boolean', defaultValue: false },
+    ],
+    render: (props) => {
+      return (
+        <Box
+          key={`${props.radius}-${props.staggerInterval}-${props.startAngle}-${props.arcSpan}-${props.stiffness}-${props.damping}-${props.showTooltips}-${props.disabled}`}
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: 340,
+            py: 8,
+          }}
+        >
+          <RadialMenu
+            radius={Number(props.radius ?? 70)}
+            staggerInterval={Number(props.staggerInterval ?? 0.04)}
+            startAngle={Number(props.startAngle ?? -150)}
+            arcSpan={Number(props.arcSpan ?? 300)}
+            stiffness={Number(props.stiffness ?? 420)}
+            damping={Number(props.damping ?? 24)}
+            showTooltips={Boolean(props.showTooltips ?? true)}
+            disabled={Boolean(props.disabled)}
+          />
+        </Box>
+      );
+    },
+    generateCode: (props) => {
+      return `import React from 'react';
+import { RadialMenu } from '@/components/ui/RadialMenu';
+
+export function RadialMenuDemo() {
+  return (
+    <RadialMenu
+      radius={${props.radius ?? 70}}
+      staggerInterval={${props.staggerInterval ?? 0.04}}
+      startAngle={${props.startAngle ?? -150}}
+      arcSpan={${props.arcSpan ?? 300}}
+      stiffness={${props.stiffness ?? 420}}
+      damping={${props.damping ?? 24}}
+      showTooltips={${props.showTooltips ?? true}}${props.disabled ? '\n      disabled' : ''}
+    />
+  );
+}`;
+    },
+    sourceCode: FULL_RADIAL_MENU_TSX,
+    scssCode: FULL_RADIAL_MENU_SCSS,
   },
   {
     id: 'line-graph',

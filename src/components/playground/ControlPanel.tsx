@@ -32,9 +32,41 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ controls, values, on
                 onChange={(e) => onChange(ctrl.name, e.target.value)}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'action.hover',
+                    backgroundColor: 'background.paper',
                     color: 'text.primary',
                     borderRadius: '8px',
+                    '& fieldset': {
+                      borderColor: 'divider',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'primary.main',
+                    },
+                  },
+                }}
+              />
+            )}
+
+            {ctrl.type === 'number' && (
+              <TextField
+                type="number"
+                size="small"
+                fullWidth
+                value={val !== undefined ? Number(val) : 0}
+                onChange={(e) => {
+                  const parsed = parseFloat(e.target.value);
+                  onChange(ctrl.name, isNaN(parsed) ? 0 : parsed);
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'background.paper',
+                    color: 'text.primary',
+                    borderRadius: '8px',
+                    '& fieldset': {
+                      borderColor: 'divider',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'primary.main',
+                    },
                   },
                 }}
               />

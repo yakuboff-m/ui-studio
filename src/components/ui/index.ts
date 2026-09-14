@@ -26,3 +26,4 @@ export * from './Checkbox';
 export * from './SmoothTabs';
 export * from './RadixSlider';
 export * from './NumberCounter';
+export * from './RadialMenu';
