@@ -24,8 +24,10 @@ import { Slider, Switch as MuiSwitchControl } from '@mui/material';
 import { RegisteredComponent, PropControlValue } from './types';
 import { Canvas, CanvasDeviceMode } from './Canvas';
 import { ControlPanel } from './ControlPanel';
+import { FloatingControls } from './FloatingControls';
 import { CodeViewer } from './CodeViewer';
 import { useThemeMode } from '@/theme/ThemeRegistry';
+import { useFavorites } from '@/hooks/useFavorites';
 
 import {
   CustomButton,
@@ -1406,16 +1408,23 @@ export function LineGraphDemo() {
   },
 ];
 
-export const PlaygroundShell: React.FC = () => {
+interface PlaygroundShellProps {
+  initialView?: 'gallery' | 'saved';
+}
+
+export const PlaygroundShell: React.FC<PlaygroundShellProps> = ({ initialView = 'gallery' }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { mode, toggleTheme } = useThemeMode();
+  const { isFavorite, toggleFavorite, count: savedCount } = useFavorites();
 
   const urlComponentId = searchParams.get('c') || searchParams.get('component') || null;
   const urlTab = (searchParams.get('tab') as 'preview' | 'controls' | 'code') || 'preview';
+  const urlView = (searchParams.get('view') as 'gallery' | 'saved') || null;
 
   const [selectedId, setSelectedId] = useState<string | null>(urlComponentId);
   const [showcaseTab, setShowcaseTab] = useState<'preview' | 'controls' | 'code'>(urlTab);
+  const [viewMode, setViewMode] = useState<'gallery' | 'saved'>(urlView || initialView);
   const [deviceMode, setDeviceMode] = useState<CanvasDeviceMode>('desktop');
   const [isFullscreenPreview, setIsFullscreenPreview] = useState<boolean>(false);
 
@@ -1443,6 +1452,12 @@ export const PlaygroundShell: React.FC = () => {
     }
   }, [urlComponentId, urlTab]);
 
+  useEffect(() => {
+    if (urlView) {
+      setViewMode(urlView);
+    }
+  }, [urlView]);
+
   const navigateToComponent = useCallback(
     (id: string | null, tab: 'preview' | 'controls' | 'code' = 'preview') => {
       setSelectedId(id);
@@ -1450,10 +1465,10 @@ export const PlaygroundShell: React.FC = () => {
       if (id) {
         router.push(`/?c=${encodeURIComponent(id)}&tab=${tab}`, { scroll: false });
       } else {
-        router.push(`/`, { scroll: false });
+        router.push(viewMode === 'saved' ? `/saved` : `/`, { scroll: false });
       }
     },
-    [router]
+    [router, viewMode]
   );
 
   const switchTab = useCallback(
@@ -1492,6 +1507,20 @@ export const PlaygroundShell: React.FC = () => {
     }));
   };
 
+  const handleResetProps = useCallback(() => {
+    if (!activeComponent) return;
+    setPropState((prev) => {
+      const defaults: Record<string, PropControlValue> = {};
+      activeComponent.controls.forEach((ctrl) => {
+        defaults[ctrl.name] = ctrl.defaultValue;
+      });
+      return {
+        ...prev,
+        [activeComponent.id]: defaults,
+      };
+    });
+  }, [activeComponent]);
+
   const categories = useMemo(() => ['All', ...Array.from(new Set(COMPONENT_REGISTRY.map((c) => c.category)))], []);
 
   const filteredComponents = useMemo(() => {
@@ -1504,23 +1533,62 @@ export const PlaygroundShell: React.FC = () => {
     });
   }, [selectedCategory, searchQuery]);
 
+  const savedComponents = useMemo(() => {
+    return COMPONENT_REGISTRY.filter((c) => isFavorite(c.id));
+  }, [isFavorite]);
+
+  const filteredSavedComponents = useMemo(() => {
+    return savedComponents.filter((c) => {
+      const matchesCategory = selectedCategory === 'All' || c.category === selectedCategory;
+      const matchesSearch =
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [savedComponents, selectedCategory, searchQuery]);
+
   return (
     <Box className={styles.shellContainer}>
       {/* ─── 1. Our Brand Top Floating Navbar ─── */}
       <Box className={styles.topNavWrapper}>
         <Box className={styles.topNavbar}>
-          <Box className={styles.logoBrand} onClick={() => navigateToComponent(null)}>
+          <Box
+            className={styles.logoBrand}
+            onClick={() => {
+              setSelectedId(null);
+              setViewMode('gallery');
+              router.push('/', { scroll: false });
+            }}
+          >
             <WidgetsIcon sx={{ color: '#6366f1', fontSize: 24 }} />
             <span>Component Studio</span>
           </Box>
 
           <Box className={styles.navLinks}>
             <span
-              className={`${styles.navLink} ${selectedId === null ? styles.activeLink : ''}`}
-              onClick={() => navigateToComponent(null)}
+              className={`${styles.navLink} ${selectedId === null && viewMode === 'gallery' ? styles.activeLink : ''}`}
+              onClick={() => {
+                setSelectedId(null);
+                setViewMode('gallery');
+                router.push('/', { scroll: false });
+              }}
             >
               Components
             </span>
+
+            <span
+              className={`${styles.navLink} ${styles.navLinkWithBadge} ${selectedId === null && viewMode === 'saved' ? styles.activeLink : ''}`}
+              onClick={() => {
+                setSelectedId(null);
+                setViewMode('saved');
+                router.push('/saved', { scroll: false });
+              }}
+            >
+              <Bookmark size={15} fill={selectedId === null && viewMode === 'saved' ? 'currentColor' : 'none'} />
+              <span>Saved</span>
+              {savedCount > 0 && <span className={styles.savedCountChip}>{savedCount}</span>}
+            </span>
+
             <span className={styles.navLink}>Docs</span>
             <span className={styles.navLink}>Pricing</span>
           </Box>
@@ -1529,7 +1597,11 @@ export const PlaygroundShell: React.FC = () => {
             <button
               type="button"
               className={styles.cmdKBtn}
-              onClick={() => navigateToComponent(null)}
+              onClick={() => {
+                setSelectedId(null);
+                setViewMode('gallery');
+                router.push('/', { scroll: false });
+              }}
             >
               <SearchIcon sx={{ fontSize: 15 }} />
               <span>Search components</span>
@@ -1551,112 +1623,261 @@ export const PlaygroundShell: React.FC = () => {
       {/* ─── 2. Main Page Content ─── */}
       <Box className={styles.mainContainer}>
         {selectedId === null || !activeComponent ? (
-          /* GALLERY VIEW (Components Overview Layout) */
-          <Box>
-            {/* Hero Header */}
-            <Box className={styles.heroSection}>
-              <Typography className={styles.heroTitle}>
-                Component Library
-              </Typography>
-              <Typography className={styles.heroSubtitle}>
-                Browse our collection of interactive React & SCSS components. Filter by category or search for the perfect component.
-              </Typography>
+          viewMode === 'saved' ? (
+            /* DEDICATED SAVED COMPONENTS VIEW */
+            <Box>
+              {/* Hero Header */}
+              <Box className={styles.heroSection}>
+                <Typography className={styles.heroTitle}>
+                  Saved Components
+                </Typography>
+                <Typography className={styles.heroSubtitle}>
+                  Quickly access and interact with your personal collection of bookmarked components.
+                </Typography>
 
-              {/* Search & Category Filter Controls */}
-              <Box className={styles.filterControlsBar}>
-                <TextField
-                  size="small"
-                  placeholder="Search components..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                  sx={{ width: 320 }}
-                />
+                {savedComponents.length > 0 && (
+                  <Box className={styles.filterControlsBar}>
+                    <TextField
+                      size="small"
+                      placeholder="Search saved components..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                      sx={{ width: 320 }}
+                    />
 
-                <Box className={styles.categoryRow}>
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      className={`${styles.catPill} ${selectedCategory === cat ? styles.activeCatPill : ''}`}
-                      onClick={() => setSelectedCategory(cat)}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </Box>
-              </Box>
-            </Box>
-
-            {/* Component Cards Grid */}
-            <Box className={styles.componentsGrid}>
-              {filteredComponents.map((comp) => (
-                <Box key={comp.id} className={styles.componentCard}>
-                  {/* Card Live Interactive Preview */}
-                  <Box className={styles.cardPreviewCanvas} onClick={() => navigateToComponent(comp.id, 'preview')} sx={{ cursor: 'pointer' }}>
-                    {comp.render(propState[comp.id] || {})}
+                    <Box className={styles.categoryRow}>
+                      {categories.map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          className={`${styles.catPill} ${selectedCategory === cat ? styles.activeCatPill : ''}`}
+                          onClick={() => setSelectedCategory(cat)}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </Box>
                   </Box>
+                )}
+              </Box>
 
-                  {/* Card Details */}
-                  <Box className={styles.cardContent}>
-                    <Box className={styles.cardTitleRow}>
-                      <Typography className={styles.cardTitle}>{comp.name}</Typography>
-                      <Box sx={{ display: 'flex', gap: 0.75 }}>
-                        <span className={styles.tagBadge}>{comp.category}</span>
-                        <span className={styles.tierBadge}>Free</span>
+              {savedComponents.length === 0 ? (
+                <Box className={styles.savedEmptyState}>
+                  <Box className={styles.emptyIconCircle}>
+                    <Bookmark size={32} />
+                  </Box>
+                  <Typography className={styles.emptyTitle}>
+                    No saved components yet
+                  </Typography>
+                  <Typography className={styles.emptyDesc}>
+                    Bookmark components from the library to build your personal collection of motion controls and interactive UI.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      setViewMode('gallery');
+                      router.push('/', { scroll: false });
+                    }}
+                    sx={{
+                      borderRadius: '12px',
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      background: '#6366f1',
+                      px: 3,
+                      py: 1.2,
+                      '&:hover': { background: '#4f46e5' },
+                    }}
+                  >
+                    Explore Components
+                  </Button>
+                </Box>
+              ) : (
+                /* Component Cards Grid */
+                <Box className={styles.componentsGrid}>
+                  {filteredSavedComponents.map((comp) => (
+                    <Box key={comp.id} className={styles.componentCard}>
+                      {/* Card Live Interactive Preview */}
+                      <Box
+                        className={styles.cardPreviewCanvas}
+                        onClick={() => navigateToComponent(comp.id, 'preview')}
+                        sx={{ cursor: 'pointer' }}
+                      >
+                        {comp.render(propState[comp.id] || {})}
+                        <button
+                          type="button"
+                          className={`${styles.cardBookmarkBtn} ${styles.savedActive}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(comp.id);
+                          }}
+                          title="Remove from saved"
+                          aria-label="Remove from saved"
+                        >
+                          <Bookmark size={17} fill="currentColor" />
+                        </button>
+                      </Box>
+
+                      {/* Card Details */}
+                      <Box className={styles.cardContent}>
+                        <Box className={styles.cardTitleRow}>
+                          <Typography className={styles.cardTitle}>{comp.name}</Typography>
+                          <Box sx={{ display: 'flex', gap: 0.75 }}>
+                            <span className={styles.tagBadge}>{comp.category}</span>
+                            <span className={styles.tierBadge}>Free</span>
+                          </Box>
+                        </Box>
+
+                        <Typography className={styles.cardDesc}>
+                          {comp.description}
+                        </Typography>
+
+                        <Box className={styles.cardFooter}>
+                          <button
+                            type="button"
+                            className={styles.cardPrimaryBtn}
+                            onClick={() => navigateToComponent(comp.id, 'preview')}
+                          >
+                            <LaunchIcon sx={{ fontSize: 14 }} />
+                            <span>Preview &amp; Controls</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className={styles.cardSecondaryBtn}
+                            onClick={() => navigateToComponent(comp.id, 'code')}
+                          >
+                            <CodeIcon sx={{ fontSize: 14 }} />
+                            <span>Code</span>
+                          </button>
+                        </Box>
                       </Box>
                     </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
+          ) : (
+            /* GALLERY VIEW (Components Overview Layout) */
+            <Box>
+              {/* Hero Header */}
+              <Box className={styles.heroSection}>
+                <Typography className={styles.heroTitle}>
+                  Component Library
+                </Typography>
+                <Typography className={styles.heroSubtitle}>
+                  Browse our collection of interactive React & SCSS components. Filter by category or search for the perfect component.
+                </Typography>
 
-                    <Typography className={styles.cardDesc}>
-                      {comp.description}
-                    </Typography>
+                {/* Search & Category Filter Controls */}
+                <Box className={styles.filterControlsBar}>
+                  <TextField
+                    size="small"
+                    placeholder="Search components..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                    sx={{ width: 320 }}
+                  />
 
-                    <Box className={styles.cardFooter}>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        startIcon={<LaunchIcon fontSize="small" />}
-                        onClick={() => navigateToComponent(comp.id, 'preview')}
-                        sx={{
-                          textTransform: 'none',
-                          fontSize: '0.8rem',
-                          fontWeight: 600,
-                          background: '#6366f1',
-                          borderRadius: '10px',
-                          '&:hover': { background: '#4f46e5' },
-                        }}
+                  <Box className={styles.categoryRow}>
+                    {categories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        className={`${styles.catPill} ${selectedCategory === cat ? styles.activeCatPill : ''}`}
+                        onClick={() => setSelectedCategory(cat)}
                       >
-                        Preview &amp; Controls
-                      </Button>
-
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<CodeIcon fontSize="small" />}
-                        onClick={() => navigateToComponent(comp.id, 'code')}
-                        sx={{
-                          textTransform: 'none',
-                          fontSize: '0.8rem',
-                          fontWeight: 600,
-                          borderRadius: '10px',
-                        }}
-                      >
-                        Code
-                      </Button>
-                    </Box>
+                        {cat}
+                      </button>
+                    ))}
                   </Box>
                 </Box>
-              ))}
+              </Box>
+
+              {/* Component Cards Grid */}
+              <Box className={styles.componentsGrid}>
+                {filteredComponents.map((comp) => (
+                  <Box key={comp.id} className={styles.componentCard}>
+                    {/* Card Live Interactive Preview */}
+                    <Box
+                      className={styles.cardPreviewCanvas}
+                      onClick={() => navigateToComponent(comp.id, 'preview')}
+                      sx={{ cursor: 'pointer' }}
+                    >
+                      {comp.render(propState[comp.id] || {})}
+                      <button
+                        type="button"
+                        className={`${styles.cardBookmarkBtn} ${isFavorite(comp.id) ? styles.savedActive : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite(comp.id);
+                        }}
+                        title={isFavorite(comp.id) ? 'Saved' : 'Save component'}
+                        aria-label={isFavorite(comp.id) ? 'Remove from saved' : 'Save component'}
+                      >
+                        <Bookmark
+                          size={17}
+                          fill={isFavorite(comp.id) ? 'currentColor' : 'none'}
+                        />
+                      </button>
+                    </Box>
+
+                    {/* Card Details */}
+                    <Box className={styles.cardContent}>
+                      <Box className={styles.cardTitleRow}>
+                        <Typography className={styles.cardTitle}>{comp.name}</Typography>
+                        <Box sx={{ display: 'flex', gap: 0.75 }}>
+                          <span className={styles.tagBadge}>{comp.category}</span>
+                          <span className={styles.tierBadge}>Free</span>
+                        </Box>
+                      </Box>
+
+                      <Typography className={styles.cardDesc}>
+                        {comp.description}
+                      </Typography>
+
+                      <Box className={styles.cardFooter}>
+                        <button
+                          type="button"
+                          className={styles.cardPrimaryBtn}
+                          onClick={() => navigateToComponent(comp.id, 'preview')}
+                        >
+                          <LaunchIcon sx={{ fontSize: 14 }} />
+                          <span>Preview &amp; Controls</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          className={styles.cardSecondaryBtn}
+                          onClick={() => navigateToComponent(comp.id, 'code')}
+                        >
+                          <CodeIcon sx={{ fontSize: 14 }} />
+                          <span>Code</span>
+                        </button>
+                      </Box>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
             </Box>
-          </Box>
+          )
         ) : (
           /* SINGLE COMPONENT SHOWCASE VIEW (Component Detail Layout) */
           <Box className={styles.componentPageWrap}>
@@ -1674,15 +1895,30 @@ export const PlaygroundShell: React.FC = () => {
 
             {/* Component Header Info */}
             <Box className={styles.compHeaderSection}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>
-                  {activeComponent.name}
-                </Typography>
-                <span className={styles.tagBadge}>{activeComponent.category}</span>
-                <span className={styles.tierBadge}>Free</span>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                  <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                    {activeComponent.name}
+                  </Typography>
+                  <span className={styles.tagBadge}>{activeComponent.category}</span>
+                  <span className={styles.tierBadge}>Free</span>
+                </Box>
+
+                <button
+                  type="button"
+                  className={`${styles.saveHeaderBtn} ${isFavorite(activeComponent.id) ? styles.savedActive : ''}`}
+                  onClick={() => toggleFavorite(activeComponent.id)}
+                  aria-label={isFavorite(activeComponent.id) ? 'Remove from saved' : 'Save component'}
+                >
+                  <Bookmark
+                    size={16}
+                    fill={isFavorite(activeComponent.id) ? 'currentColor' : 'none'}
+                  />
+                  <span>{isFavorite(activeComponent.id) ? 'Saved' : 'Save'}</span>
+                </button>
               </Box>
 
-              <Typography variant="body1" sx={{ color: 'text.secondary', maxW: '680px' }}>
+              <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: '680px' }}>
                 {activeComponent.description}
               </Typography>
             </Box>
@@ -1767,11 +2003,17 @@ export const PlaygroundShell: React.FC = () => {
               {/* Container Body */}
               <Box className={styles.showcaseBody}>
                 {showcaseTab === 'preview' ? (
-                  /* Full-width unconstrained Preview Canvas */
+                  /* Full-width unconstrained Preview Canvas with Floating Bottom-Right Controls */
                   <Box className={styles.showcaseCanvasArea}>
                     <Canvas bgMode={canvasBg} deviceMode={deviceMode}>
                       {activeComponent.render(activeProps)}
                     </Canvas>
+                    <FloatingControls
+                      controls={activeComponent.controls}
+                      values={activeProps}
+                      onChange={handlePropChange}
+                      onReset={handleResetProps}
+                    />
                   </Box>
                 ) : showcaseTab === 'controls' ? (
                   /* Dedicated Props & Controls Tab */
@@ -1878,11 +2120,17 @@ export const PlaygroundShell: React.FC = () => {
             </Button>
           </Box>
 
-          {/* Full Window Unconstrained Component Render */}
+          {/* Full Window Unconstrained Component Render with Floating Controls */}
           <Box className={styles.fullWindowContent}>
             <Canvas bgMode={canvasBg} deviceMode={deviceMode}>
               {activeComponent.render(activeProps)}
             </Canvas>
+            <FloatingControls
+              controls={activeComponent.controls}
+              values={activeProps}
+              onChange={handlePropChange}
+              onReset={handleResetProps}
+            />
           </Box>
         </Box>
       )}
